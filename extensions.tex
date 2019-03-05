@@ -12,14 +12,16 @@
 \subsection{Data-Aware Sampling}
 %We demonstrated that workload-aware approximate PCA can provide large end-to-end speedups in \red{our time series case study} and for non-time series datasets with low intrinsic dimensionality.
 
-DROP's efficiency is determined by the dataset's spectrum.
-To demonstrate this, we plot the (truncated, normalized) spectrum of each of the UCR time series~\cite{ucr}.
-We highlight MALLAT, with the sharpest drop-off, which performs extremely well, and Phoneme, with a near uniform distribution, which does not.
-Datasets such as Phoneme perform poorly under the default configuration as we enable cost-based optimization after reaching a feasible point; thus, DROP spends a disproportionate time sampling (Fig.~\ref{fig:phoneme_lesion}). 
+DROP's efficiency is determined by the dataset's spectrum; MALLAT, with the sharpest drop-off, performs extremely well, and Phoneme, with a near uniform distribution, does not.
+Datasets such as Phoneme perform poorly under the default configuration as we enable cost-based optimization after reaching a feasible point.
+Thus, DROP spends a disproportionate time sampling (Fig.~\ref{fig:phoneme_lesion}). 
+Extending DROP to more efficiently determine if a dataset is amenable to aggressive sampling is an exciting area of future work. 
+For instance, recent theoretical results that use sampling to estimate spectrum, even when the number of samples are small in comparison to the input dimensionality~\cite{estspec}, can be run alongside DROP with minimal alteration.
+
 %To combat this, we provide an alternate sampling schedule that aggressively increases the sampling rate to quickly reach a $TLB$-achieving state if DROP repeatedly fails to meet the target $TLB$. 
 
-\vspace{.2cm}
-\includegraphics[width= .9\linewidth]{figs/spectrum-rev.pdf}
+%\vspace{.2cm}
+%\includegraphics[width= .9\linewidth]{figs/spectrum-rev.pdf}
 
 %\begin{figure}
 %\includegraphics[width=\linewidth]{figs/spectrum-rev.pdf}
@@ -27,21 +29,20 @@ Datasets such as Phoneme perform poorly under the default configuration as we en
 %\label{fig:spectrum}
 %\end{figure}
 
-Extending DROP to more efficiently determine if a dataset is amenable to aggressive sampling is an exciting area of future work. For instance, recent theoretical results that use sampling to estimate spectrum, even when the number of samples are small in comparison to the input dimensionality~\cite{estspec}, can be run alongside DROP with minimal alteration.
 
 \red{
 \subsection{Streaming Execution}
 \label{subsec:streaming}
-DROP can be extended to repeated-query scenarios that occur in a streaming context, where users wish to query incoming data against historical data.
-For instance, time series for similarity search are often generated as via systems that continuously monitor and obtain data from processes over a large span of time.
-Users wish to process this data as it arrives to identify anomalous or interesting behavior (e.g., to identify repetitive seismic activity/earthquakes~\cite{quakes}).
+%DROP can be extended to repeated-query scenarios that occur in a streaming context, where users wish to query incoming data against historical data.
+%For instance, time series for similarity search are often generated as via systems that continuously monitor and obtain data from processes over a large span of time.
+%Users wish to process this data as it arrives to identify anomalous or interesting behavior.
+% (e.g., to identify repetitive seismic activity/earthquakes~\cite{quakes}).
 
-
-Given a stationary input distribution, users can extract fixed-length sliding windows from the source and apply DROP's transformation over these segments. 
+Given a stationary input distribution, users can extract fixed-length sliding windows from the source and apply DROP's transformation over these segments as they arrive. 
 Should the data distribution not be stationary over time, DROP can be be periodically retrained in one of two ways. 
 First, DROP can use of the wide body of work in changepoint or feature drift detection~\cite{cp1, cp2} to determine when to retrain. 
 Alternatively, DROP can maintain a reservoir sample of incoming data~\cite{reservoir}, tuned to the specific application, and retrain if the metric of interest no longer satisfies user-specified constraints. 
-Due to DROP's default termination condition, cost-based optimization must be disabled until the metric constraint is once again achieved to prevent early termination.
+Due to DROP's default termination condition, cost-based optimization must be disabled until the metric constraint is achieved to prevent early termination.
 
 }
 

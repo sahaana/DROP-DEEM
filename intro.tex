@@ -38,7 +38,7 @@ DROP performs PCA on a small sample to obtain a candidate transformation, then p
 To identify the termination point that minimizes the overall runtime, DROP must overcome three challenges:
 
 First, given the results of PCA on a data sample, DROP must \emph{evaluate the quality} of the current candidate transformation.
-Popular analytics and data mining tasks often require approximate preservation of metrics such as average pairwise distances between data points~\cite{time-series-dm,dm-book,wand}, which are costly to compute.
+Popular analytics and data mining tasks often require approximate preservation of metrics such as average pairwise distances between data points~\cite{time-series-dm,dm-book}, which are costly to compute.
 Thus, DROP adapts confidence intervals (either via closed-form or, if unavailable, via bootstrapping) for fast estimation of the input metric to preserve.
 
 
