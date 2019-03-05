@@ -1,11 +1,34 @@
-\section{Sample-Based Computation}
+\section{Similarity Search Case Study}
 \label{sec:sampling}
 
-%Stochastic PCA methods that iterate over small data samples either $i)$ execute for a pre-specified number of iterations or $ii)$ execute until convergence to the solution provided by classical PCA.
-%To our knowledge, these existing termination conditions are not suitable when considering users' willingness to trade quality for downstream workload runtime.
-%However, using these methods as a starting point,
-We \red{augment our case study to} show that running PCA on data samples does not sacrifice DR quality, but that the number of samples required varies per dataset.
-We then show how progressively increasing the sampling rate can help dynamically identify how much to sample a given dataset. AND TO SOLVE OUR PROBLEM.
+To tackle workload-aware DR, we first perform a case study focusing on time series similarity search by revisiting a widely cited empirical comparison of DR techniques from VLDB 2008~\cite{keogh-study}. 
+We show that Principal Component Analysis (PCA) can outperform classic techniques (return low $k$), but at a high computational cost ($R$).
+We then demonstrate how sample-based PCA methods can bridge this gap, but that the number of samples required varies per dataset.
+Finally, we show how progressively increasing the sampling rate can help dynamically identify how much to sample a given dataset, thus providing a foundation for workload-aware DR.
+
+\subsection{PCA Speed vs. Quality}
+
+While improved quality provides faster repeated query execution, the cost of DR via PCA dominates this speedup, encouraging the use of faster, lower-quality alternatives~\cite{keogh-study}. 
+
+To briefly quantify this trade-off, we augment a widely-cited time series similarity search DR study from VLDB 2008~\cite{keogh-study} by evaluating PCA---which the authors did not benchmark due to it being ``untenable for large data sets." 
+We compare PCA via SVD to baseline techniques based on both runtime and DR performance with respect to $TLB$ over the largest datasets from~\cite{keogh-study}. 
+We use two of their fastest methods as our baselines since they show the remainder exhibited ``very little difference'': Fast Fourier Transform (FFT) and Piecewise Aggregate Approximation (PAA).
+
+
+\minihead{TLB Performance Comparison}
+We compute the minimum dimensionality ($k$) achieved by each technique subject to a $TLB$ constraint. 
+On average across the datasets, PCA provides bases that are $2.3\times$ and $3.7\times$  smaller than PAA and FFT for $TLB = 0.75$, and $2.9\times$ and $1.8\times$ smaller for $TLB = 0.99$.
+While the margin between PCA and alternatives is dataset-dependent, PCA almost always preserves $TLB$ with a lower dimensional representation.
+
+%\section{Additional End-to-End Plots}
+%\input{endendplots}
+
+\minihead{Runtime Performance Comparison} 
+PCA implemented via out-of-the-box SVD is on average over \red{$26\times$ (up to $56\times$)} slower than PAA and over \red{$4.6\times$ (up to $9.7\times$)} times slower than FFT when computing the smallest $TLB$-preserving basis.
+This substantiates the observation that classic PCA is incredibly slow compared to alternatives~\cite{keogh-study}. 
+
+
+
 
 \subsection{Feasibility of Sampling}
 Many real-world \red{datasets} are intrinsically low-dimensional, as evidenced by their rapid falloff in their eigenvalue spectrum.
