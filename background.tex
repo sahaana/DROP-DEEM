@@ -1,31 +1,19 @@
-\section{Problem Statement and DR Background}
+\section{Problem Statement and Background}
 \label{sec:background}
 
-We provide background on dimensionality reduction (DR) and revisit a widely cited empirical comparison of DR techniques from VLDB 2008~\cite{keogh-study} \red{that we use as a case study.
-We show} that Principal Component Analysis (PCA) can outperform classic techniques, but at a high computational cost.
+In this section, we  provide background on dimensionality reduction (DR), and then define our problem of workload-aware dimensionality reduction (DR). Finally, we revisit a widely cited empirical comparison of DR techniques from VLDB 2008~\cite{keogh-study} \red{that we use as a case study to validate} that Principal Component Analysis (PCA) can outperform classic techniques, but at a high computational cost.
 
 \subsection{Dimensionality Reduction}
 \label{sec:defs}
 
-%As time series grow larger and richer with respect to the number of metrics and metadata collected (e.g., as sensor fidelity and sampling rates increase), DR becomes important in their analysis~\cite{macrobase}.
-DR refers to finding a low-dimensional representation of a dataset that preserves properties of interest, such as data point similarity~\cite{dr-survey1,dr-survey2}.
-Formally, consider $\mvar$ data vectors of length $\dvar$, $x_i \in \mathbb{R}^\dvar$, with $\mvar > \dvar$. 
-We can represent this as a dataset matrix $X \in \mathbb{R}^{\mvar \times \dvar}$, where each row $i$ corresponds to vector $x_i$.  
-DR computes a transformation function ($T: \mathbb{R}^\dvar \rightarrow \mathbb{R}^k$) that maps each $x_i$ to a new basis as $\tilde{x}_i \in \mathbb{R}^k$ where $k \leq \dvar$, resulting in a new data matrix $T(X) = \tilde{X} \in \mathbb{R}^{\mvar \times k}$ that preserves some metric of interest.  
-
-DR techniques optimize for various metrics. 
-%For instance, DR via Locality Sensitive Hashing~\cite{lsh} can preserve distance metrics such as Hamming distance and Jaccard similarity, and
-In similarity search, for instance, a popular metric to preserve is the average Euclidean distance between pairs of points, which the literature refers to as \emph{tightness of lower bounds} ($TLB$)~\cite{gemini,keogh-study}.
-
+DR refers to finding a low-dimensional representation of a dataset that preserves properties of interest, such as data point similarity~\cite{dr-survey1,dr-survey2}. Formally, consider a data matrix $X \in \mathbb{R}^{\mvar \times \dvar}$, where each row $i$ corresponds to data point $x_i \in \mathbb{R}^\dvar$, with $\mvar > \dvar$.  
+DR computes a transformation function ($T: \mathbb{R}^\dvar \rightarrow \mathbb{R}^k$) that maps each $x_i$ to a new basis as $\tilde{x}_i \in \mathbb{R}^k$ where $k \leq \dvar$, resulting in a new data matrix $T(X) = \tilde{X} \in \mathbb{R}^{\mvar \times k}$.
 
 \subsubsection*{Principal Component Analysis (PCA)}
 \label{sec:pca}
 PCA is a linear DR technique that identifies a new orthogonal basis for a dataset that captures its directions of highest variance.
 Of all linear transformations, this basis minimizes reconstruction error in a mean square sense. 
 Classically implemented PCA uses a Singular Value Decomposition (SVD) routine~\cite{trefethen}.
-%, which computes the matrix decomposition $X = U \Sigma V^\intercal$.  
-%Given a data matrix $X$, PCA via SVD forms the PCA transformation matrix $T:\mathbb{R}^\dvar \rightarrow \mathbb{R}^k$ by first subtracting each column in $X$ by the column's mean to obtain $C_X$ ($\mathbf{1}^\intercal C_X = \mathbf{0}$). 
-%The first $k$ right singular vectors of $C_X$ (first $k$ columns of $V$ from the SVD of $C_X$) comprise $T$.  
 
 \begin{comment} 
 \begin{algorithm}
@@ -80,25 +68,36 @@ DR with a multidimensional index structure is a classic way of achieving this, a
 
 
 \subsubsection*{\red{DR in Similarity Search}}
-\red{Similarity search is a common repeated-query workload performed over a variety of data types including images, documents and time series~\cite{keogh-study,lsh}, which we use as a running case study.
-The $TLB$ is useful here to identify the quality of a low dimensional transformation without performing the downstream similarity search task, as it measures how well a \emph{contractive} DR transformation (i.e. distances in the transformed space are less than or equal to those in the original) preserves pairwise Euclidean distances:}
+\red{Similarity search is a common repeated-query workload performed over a variety of data types including images, documents and time series~\cite{keogh-study,lsh}, which we use as a running case study given its popularity and the large amount of research in the space.
+The Tightness of Lower Bounds ($TLB$) is typically the metric preserved by DR in this setting~\cite{keogh-study}, as it measures how well a \emph{contractive} DR transformation (i.e. distances in the transformed space are less than or equal to those in the original) preserves pairwise Euclidean distances. This can be used to identify the quality of a low dimensional transformation without performing the downstream similarity search task:}
 \begin{equation}
 \label{eq:tlb}
 TLB = \frac{2}{\mvar(\mvar-1)}\sum_{i<j}\frac{\| \tilde{x}_i -  \tilde{x}_j \|_2 }{\| x_i -  x_j\|_2 }.
 \end{equation}
-%If $TLB$ is preserved (close to 1), then nearby points remain nearby and far away points remain far away. 
-We focus on Euclidean time series similarity search \red{as our primary means of evaluation} given its popularity and the large amount of research in the space.%; we discuss alternatives in Sections~\ref{subsec:teval}.% and~\ref{subsec:disc}.
 
-%By performing DR as a data pre-processing step, downstream analytics operators for tasks including clustering, classification, and similarity search can operate over substantially smaller data. 
-%As an example, Figure~\ref{fig:plain_knn} demonstrates how K-Nearest Neighbor (k-NN) runtime scales with dataset size ($m$) and dimensionality ($n$) using the experimental setup described in Section~\ref{sec:experiments}.
-%\includegraphics[width=.9\linewidth]{figs/knn_runtime_scaling.pdf}
-%We see that the smaller the data dimensionality, the lower the runtime cost---and \emph{larger datasets see greater improvements} as dimensionality is decreased.
 
-%\begin{figure}
-%\includegraphics[width=\linewidth]{figs/knn_runtime_scaling.pdf}
-%\caption[]{Runtime of k-NN (specifically, 1-NN) as data dimensionality varies. For a given dataset size ($m$) operating with lower dimensionality ($d$) provides linear runtime improvements. This improvement grows as dataset size grows.}
-%\label{fig:plain_knn}
-%\end{figure}
+\subsection{Problem: Workload-Aware DR}
+\label{subsec:wadr}
+
+In end-to-end analytics tasks, we wish to minimize the combined runtime of DR and downstream applications. 
+DR is a fixed cost (i.e., in index construction for similarity search), while each query (i.e., nearest neighbor query) over the dataset incurs a marginal cost that is dependent on DR quality: lower-dimensional data points result in faster queries. 
+
+In workload-aware dimensionality reduction, we perform DR to minimize overall workload runtime. As input, we consider a set of data points, a desired level of metric preservation ($B$; default $TLB$, e.g., $TLB \geq .99$) and, optional downstream runtime as a function of dimensionality ($\mathcal{C}_\mvar(\dvar)$ for an $\mvar\times \dvar$ data matrix).  
+We use this information to efficiently return a DR function that satisfies the metric constraint with a configurable degree of confidence.
+More formally, denoting DR runtime as $R$, we define the optimization problem:
+\begin{problem}
+\label{def:opt}
+  Given $X \in \mathbb{R}^{\mvar \times \dvar}$, $TLB$ constraint $B \in 
+  (0, 1]$, confidence $c$, and workload runtime function $\mathcal{C}_\mvar:\mathbb{Z}_{+} \rightarrow \mathbb{R}_{+}$, find $k$ and transformation
+  matrix $T_k \in \mathbb{R}^{\dvar \times k}$ that minimizes $R + \mathcal{C}_\mvar(k)$
+  such that $TLB(XT_k) \geq B$ with confidence $c$.
+\end{problem}
+
+We assume the downstream runtime model $\mathcal{C}_\mvar(\dvar)$ is monotonically increasing in $\dvar$ as the premise of DR for efficient analytics relies on downstream tasks running faster on lower dimensional data.
+Absent this, we default to execution until convergence (i.e, until $k$ plateaus) as described in Section~\ref{sec:sampling}, and demonstrate the cost of doing so in Section~\ref{sec:experiments}.
+
+The more time spent on DR ($R$), the smaller the transformation ($k$), thus the lower the workload runtime.
+To minimize $R + \mathcal{C}_\mvar(k)$, we must determine how much time to spend on DR to minimize end-to-end runtime.
 
 
 \subsection{Case Study: PCA Speed vs. Quality}

@@ -3,8 +3,7 @@
 
 
 We now introduce DROP, a system that performs progressive sampling and online progress estimation to control the amount of sampling to minimize overall runtime. 
-DROP answers a crucial question that sample-based PCA techniques have traditionally ignored: how long should these methods run, and how much computation is actually required to obtain high quality bases? 
-We now discuss workload-aware DR and DROP's architecture.
+DROP answers a crucial question that stochastic PCA techniques have traditionally ignored: how long should these methods run? 
 
 \begin{comment}
 Notation used is in Table~\ref{table:inputs}.
@@ -44,36 +43,6 @@ $i $ & Current DROP iteration        & $\mathbb{Z}_+$  \tabularnewline
 \vspace{-1em}
 \end{figure*}
 
-\subsection{Workload-Aware DR}
-\label{subsec:wadr}
-
-In end-to-end analytics tasks, we wish to minimize the combined runtime of index construction via DR and downstream applications. 
-Similarity search performance depends heavily on the number of workload queries.
-DR is a fixed cost in index construction, while each query over the dataset incurs a marginal cost that is dependent on DR quality: lower-dimensional data points result in faster queries. 
-Thus, end-to-end runtime is a function of $i)$ the time required for DR in index construction (a fixed cost) and $ii)$ the benefit of DR as applied to each query (a marginal cost).
-
-In workload-aware dimensionality reduction, we are performing DR to minimize overall workload runtime. As input, we consider a set of data points, a desired level of metric preservation ($B$; default $TLB$, e.g., $TLB \geq .99$) and, optionally, downstream runtime as a function of dimensionality ($\mathcal{C}_\mvar(\dvar)$ for an $\mvar\times \dvar$ data matrix).  
-We seek to use this information to efficiently return a DR function that satisfies the metric constraint with a configurable degree of confidence.
-More formally, denoting DR runtime as $R$, we define the optimization problem as follows:
-\begin{problem}
-\label{def:opt}
-  Given $X \in \mathbb{R}^{\mvar \times \dvar}$, $TLB$ constraint $B \in 
-  (0, 1]$, confidence $c$, and workload runtime function $\mathcal{C}_\mvar:\mathbb{Z}_{+} \rightarrow \mathbb{R}_{+}$, find $k$ and transformation
-  matrix $T_k \in \mathbb{R}^{\dvar \times k}$ that minimizes $R + \mathcal{C}_\mvar(k)$
-  such that $TLB(XT_k) \geq B$ with confidence $c$.
-\end{problem}
-
-We assume the downstream runtime model $\mathcal{C}_\mvar(\dvar)$ is monotonically increasing in $\dvar$ as the premise of DR for efficient analytics relies on downstream tasks running faster on lower dimensional data.
-Absent this, we default to execution until convergence (i.e, until $k$ plateaus) as described in Section~\ref{sec:sampling}, and demonstrate the cost of doing so in Section~\ref{sec:experiments}.
-
-%\red{If $\mathcal{C}_\mvar(\dvar)$ is unknown, there exists a number of estimation routines for relational workloads that users can use to approximate their downstream runtimes~\cite{udfa,udfb,udfc}.
-%For general functions that users may only possess black-box knowledge of, such as those used in time series analytics, regression analysis can be used: the user can input datasets of varying dimension, and build a model for the function's runtime. For example, we use polynomial regression to model the cost of our black-box k-NN task in our evaluation.
-%We note that this cost function must also take into account the downstream workload's expected query load (the effect of which we describe in Section~\ref{sec:experiments}), which the user must estimate using their expected system throughput.}
-%Absent this, we default to execution until convergence (i.e, until $k$ plateaus) as described in Section~\ref{sec:sampling}, and demonstrate the cost of doing so in Section~\ref{sec:experiments}.
-
-The more time spent on DR ($R$), the smaller the transformation ($k$), thus the lower the workload runtime.
-To minimize $R + \mathcal{C}_\mvar(k)$, we must determine how much time to spend on DR to minimize end-to-end runtime.
-%We now show how DROP combines techniques from approximate query processing and progressive sampling to do so.
 
 \subsection{DROP Architecture}
 \label{subsec:arch}

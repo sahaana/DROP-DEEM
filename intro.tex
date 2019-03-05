@@ -3,16 +3,16 @@
 \label{sec:intro}
 
 Continued, rapid growth in high-dimensional data from automated data sources~\cite{plato,macrobase-cidr} poses a scalability challenge for machine learning (ML) pipelines.
-In exchange for a preprocessing cost, dimensionality reduction (DR) techniques can accelerate ML training and inference/query execution (as a result of smaller data points), improving overall pipeline runtime (see Figure~\ref{fig:pipeline}) while preserving accuracy~\cite{keogh-indexing,local-dr,decade,gemini}.
+Dimensionality reduction (DR) techniques can alleviate this scalability challenge~\cite{keogh-indexing,local-dr,decade,gemini}.
+In exchange for a runtime cost ($R$), DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features, allowing downstream analytics routines to terminate in runtime proportional to $k > n$, while preserving accuracy on downstream tasks (see Figure~\ref{fig:pipeline}).
 
-Principal Component Analysis (PCA) is often the DR method of choice for practitioners with respect to transformation quality and downstream accuracy~\cite{jolbook}. However, na\"{i}ve implementations of PCA are data and workload-independent, and scale poorly with dimensionality, resulting in preprocessing times that exceed the downstream runtime benefit of DR. As a result, practitioners are willing to sacrifice quality (i.e., size of lower dimension representation at a given accuracy) for runtime, and use alternative DR methods~\cite{keogh-study}. 
-
+Principal Component Analysis (PCA) is often the DR method of choice for practitioners with respect to transformation quality ($k$) for a target accuracy~\cite{jolbook}. However, na\"{i}ve implementations of PCA are data and workload-independent, and scale poorly with dimensionality, resulting in runtimes ($R$) that exceed the downstream runtime benefit of DR via PCA. Accordingly, practitioners often sacrifice quality for end-to-end runtime, and use alternative DR methods~\cite{keogh-study}. 
 
 Sample-based, stochastic PCA algorithms~\cite{shamir,re-new} are a scalable alternative to classical PCA.
 However, the amount of sampling required is highly data-dependent.
 If we sample too many data points, then the runtime overhead of PCA in an end-to-end analytics workload could outweigh the statistical benefits.
 If we fail to sample enough data points, then PCA could fail to deliver a sufficiently high-quality reduction and compromise the runtime and/or accuracy of downstream analytics.
-This raises a critical question: can we develop a data and workload-dependent means of efficiently and accurately determining the sampling rate that minimizes end-to-end workload runtime while ensuring high accuracy?
+This raises a critical question: can we develop a data and workload-dependent means of efficiently and accurately determining the sampling rate for stochastic PCA, such that we can obtain PCA's transformation quality while minimizing end-to-end workload runtime?
 
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/pipeline.pdf}
@@ -20,26 +20,25 @@ This raises a critical question: can we develop a data and workload-dependent me
 \label{fig:pipeline}
 \end{figure}
 
-
 To this end, we develop DROP, a system that performs whole-workload runtime optimization by dynamically identifying the amount of sampling required for stochastic PCA.
 DROP takes a high-dimensional dataset,\footnote{Our primary focus \red{for performance evaluation is a case study on time series similarity search,} given the amount of study in the database community~\cite{keogh-study} and the resurgence of interest in time series analytics systems~\cite{macrobase,macrobase-cidr,trill-signal}. We provide a preliminary generalizability analysis in Section~\ref{sec:experiments}.}  property to preserve (e.g., pairwise Euclidean distance to 5\%), and optional runtime model expressing downstream workload performance as a function of dimensionality (e.g., for k-Nearest Neighbors [k-NN], runtime is linear in dimensionality). 
 DROP returns a low-dimensional transformation for the input using as few samples as needed to minimize the projected overall workload runtime while satisfying quality constraints.
 
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/basic.pdf}
-\caption[]{DROP is a DR operator compatible with standard ML pipelines. The challenge DROP solves is when to stop training---is the low dimensional representation trained via a data sample ``good enough"?}
+\caption[]{DROP is a workload-aware DR operator compatible with standard ML pipelines. The challenge DROP solves is when to stop training (``good enough?")}
 \label{fig:basic}
 \end{figure}
 
 %%%%%%
 
-To achieve this functionality, DROP addresses the question of how much to sample the input dataset by adapting techniques from the approximate query processing literature: data-dependent progressive sampling and online progress estimation at runtime.  
+To achieve this functionality, DROP addresses the question of how much to sample the input dataset via data-dependent progressive sampling and online progress estimation at runtime.  
 DROP performs PCA on a small sample to obtain a candidate transformation, then progressively increases the number of samples until termination (see Figure~\ref{fig:basic}). 
 To identify the termination point that minimizes the overall runtime, DROP must overcome three challenges:
 
 First, given the results of PCA on a data sample, DROP must \emph{evaluate the quality} of the current candidate transformation.
 Popular analytics and data mining tasks often require approximate preservation of metrics such as average pairwise distances between data points~\cite{time-series-dm,dm-book}, which are costly to compute.
-Thus, DROP adapts confidence intervals (either via closed-form or, if unavailable, via bootstrapping) for fast estimation of the input metric to preserve.
+Thus, DROP adapts confidence intervals for fast estimation of the input metric to preserve.
 
 
 Second, DROP must \emph{estimate the marginal benefit of sampling additional datapoints} for another iteration.
