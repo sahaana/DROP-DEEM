@@ -1,0 +1,21 @@
+\section{Implementation and Experiments}
+\label{sec:experiments}
+
+\subsection{Implementation}
+MIC DROP is currently implemented in --, and was tested on --. 
+
+\subsection{Experiments}
+We tried MIC DROP on a variety of datasets. We first compared against all of the UCR timeseries suite as a benchmark against KDD/Keogh stuff. In addition, we had 4 production datasets across domains including: - - - -. Finally, to highlight blah in a controlled seting, we ran over a synthetic dataset of K gaussians. The purpose of the experiments are threefold: 
+
+\begin{enumerate}
+\item{Runtime}
+\item{Correctness}
+\item{There was something else}
+\end{enumerate}
+
+In the first series of experiments, we compare MIC DROPs runtime with that of running a full PCA. While computing PCA over small data sets is often faster than MIC DROP's incremental approach, the full benefit of MIC DROP can be seen when data size is prohibitively large. To demonstrate this, we run MIC DROP over a synthetic dataset with a fixed generative model. We then examine how the dataset size affects the runtime. We provide a table of runtime for PCA and MIC DROP for each of the datasets in Appendix A. 
+
+EXPERIMENT TODO: Randomly generated data of increasing size. Fig - K gaussians? Plot size vs time MIC DROP/ time PCA
+
+The next series 
+

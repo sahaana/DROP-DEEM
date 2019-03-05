@@ -1,0 +1,114 @@
+
+\documentclass{sig-alternate}
+\usepackage{balance,array,microtype,pifont,gitinfo,enumitem}
+\usepackage[bf]{subfigure}
+
+
+\let\proof\relax
+\let\endproof\relax
+
+\usepackage{color, times, mathptmx, amsmath, amssymb, amsthm, verbatim, 
+  mdwlist, graphicx, footnote, multirow, xspace, tikz, colortbl,dcolumn, mathtools}
+
+\usepackage[noadjust]{cite}
+
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
+\let\footnotesize\small
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+
+\setlength{\parskip}{3ex plus 2ex minus 2ex}
+
+\algrenewcommand{\alglinenumber}[1]{\small#1:}
+
+\theoremstyle{definition}
+\setlength{\textfloatsep}{1em}% Remove \textfloatsep
+
+\renewcommand\topfraction{0.85}
+\renewcommand\bottomfraction{0.85}
+\renewcommand\textfraction{0.1}
+\renewcommand\floatpagefraction{0.85}
+
+\interfootnotelinepenalty=10000
+
+\usepackage{scrextend}
+
+%\usepackage[hidelinks, pdftitle={},
+%            pdfauthor={}]{hyperref}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{breakurl}
+
+\newcommand{\commentt}[1]{{\small\texttt{#1}}}
+
+\newcommand{\extnote}[1]{\ifextended {#1} \fi}
+
+\newcommand{\suchthat}{\textrm{ s.t. }}
+\newcommand{\mathand}{\textrm{ and }}
+
+\newcommand{\mycheckmark}{\ding{51}}
+
+\newcommand{\example}[1]{{\vspace{.25em}\noindent\textbf{#1.} }}
+\newcommand{\miniheadnostop}[1]{{\vspace{.4em}\noindent\textit{#1} }}
+\newcommand{\minihead}[1]{{\vspace{.45em}\noindent\textbf{#1.} }}
+\newcommand{\miniheadit}[1]{{\vspace{.45em}\noindent\textit{#1.} }}
+\newcommand{\miniheadnopd}[2]{{\vspace{.4em}\noindent\textbf{#1}\hspace{.5em}{#2}\vspace{.4em} }}
+\newcommand{\minidef}[1]{{\vspace{.25em}\noindent\textit{#1} }}
+
+\newcommand{\pbnote}[1]{{\color{red}{#1 ---P.B.}}}
+\newcommand{\dnnote}[1]{{\color{blue}{#1 ---D.N.}}}
+\newcommand{\srm}[1]{{\color{green}{SAM: #1}}}
+
+\newif\ifextended
+%\extendedfalse
+\extendedtrue
+
+
+\hyphenation{da-ta-base}
+\hyphenation{pre-ven-tion-}
+\hyphenation{non-de-ter-min-is-tic}
+
+\usepackage{etoolbox}
+\newcommand{\zerodisplayskips}{%
+  \setlength{\abovedisplayskip}{4pt}
+  \setlength{\belowdisplayskip}{4pt}
+  \setlength{\abovedisplayshortskip}{4pt}
+  \setlength{\belowdisplayshortskip}{4pt}}
+\appto{\normalsize}{\zerodisplayskips}
+\appto{\small}{\zerodisplayskips}
+\appto{\footnotesize}{\zerodisplayskips}
+
+
+
+\usepackage{inconsolata}
+
+\begin{document}
+%
+% --- Author Metadata here ---
+\conferenceinfo{XXX}{YYY}
+
+
+\title{DROP: Automated Dimensionality Reduction Optimization for Time-Series and IoT Data}
+
+{\author{}}
+\maketitle
+
+
+%{\color{blue}\noindent \input{.githash}}\\
+
+\input{abstract}
+\input{intro}
+\input{bakeoff}
+\input{algorithm}
+\input{implementations}
+\input{experiments}
+\input{discussion}
+\input{conclusion}
+
+\bibliography{paper} \bibliographystyle{abbrv}
+
+\balance
+
+\end{document}

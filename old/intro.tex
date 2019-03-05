@@ -1,0 +1,73 @@
+
+\section{Introduction}
+\label{sec:intro}
+
+The recent proliferation of devices, sensors, and automated processes (``Internet of Things,'' or IoT) has led to a rapid increase in data volumes.
+Moreover, this data is often high-dimensional (hundreds to thousands or more dimensions), capturing both time-varying phenomena as well as a diverse set of sensing modalities (e.g., video, image, sound, electrical pulses).
+As a result, efficiently performing data-driven tasks including predictive analytics, classification, and anomaly detection over these IoT data volumes poses serious computational challenges.
+
+Dimensionality reduction techniques offer a powerful toolkit for assisting with the efficient processing of this high-dimensional data.
+These techniques offer the ability to transform high-dimensional data into a lower dimensional subspace while still preserving important properties of the data such as pairwise distances between data points.
+For example, random projections generate random linear combinations of the high-dimensional vectors to ``project'' them into a lower-dimensional space.
+Classic analyses such as clustering, classification, anomaly detection, and similarity search can be performed more quickly in this lower-dimensional basis. For example, linear reduction in dimensionality yields exponential runtime improvements for Kernel Density Estimation.
+
+In this paper, we begin by asking a simple question: which dimensionality reduction techniques are best-suited for time-series and IoT data?
+In Section~\ref{sec:background}, we empirically evaluate the statistical and runtime performance of a large set of dimensionality reduction techniques on a gold standard set of time-series datasets.
+This study reveals two surprising trends:
+
+First, prior, widely-cited results have suggested that the choice of dimensionality reduction technique is immaterial to result quality.
+That is, given this extremely high-dimensional data, most techniques are roughly equivalent in terms of accuracy.
+% ignore because of speed, what about incremental computation?
+However, these results ignore a technique known as Principal Component Analysis (PCA).
+We show that, for a given accuracy bound on pairwise distances (as is standard in the high-dimensional similarity search literature), PCA achieves a smaller-dimensional basis than alternatives, often by a wide margin (10-50\%).
+This finding is substantiated by theory: PCA is guaranteed to recover the optimal orthogonal subspace that preserves the directions of maximum variance within a dataset.
+% That is, PCA can find the projections that are most effective at capturing the differences between data points.
+However, PCA is often neglected for its slow speed---up to five orders of magnitude slower than the fastest alternative we consider---with runtime $O(n^2d)$ for a $d$-dimensional dataset containing $n$ points ($n>d$ and implemented via full Singular Value Decomposition, or SVD).
+
+Second, we find that PCA is able to uncover suitable low-dimensional bases that are far smaller than theory predicts.
+For example, classic results from theory such as the Johnson-Lindenstrauss (JL) lemma describe the existence of a $d=\Omega(\frac{log(n)}{\epsilon^2})$-dimensional basis that preserves pairwise distances within a factor of $(1+\epsilon)$.
+% to-do: talk about JL!
+In contrast, our experimental analysis uncovers low-dimensional $\epsilon$-preserving subspaces that are much smaller: for example, for a dataset of $2000$ points, PCA finds a $10$-dimensional subspace that preserves distances within $1\%$ (as opposed to the $10982$ predicted by JL).
+The reason for this phenomenon is that the time-series and IoT data we examine have many dimensions that are tightly coupled.
+PCA is able to identify these couplings within the data and therefore identify a basis that captures this smaller, \textit{intrinsic dimensionality} of the datasets.
+In contrast, many theoretical results like JL are pessimistic because they do not make assumptions regarding these couplings in the dataset structure.
+
+As a result, we subsequently ask: given that PCA is so effective at finding low-dimensional bases, can we further leverage the structure of IoT and time-series data to make it faster?
+The low intrinsic dimensionality of our datasets implied there was tight coupling between the dimensions \textit{within} each data point; we ask: are there similar, tight couplings \textit{across} data points that we could exploit?
+Time-series data capture repeated measurements of an often periodic time-varying process; for example, a time-series capturing human heartbeats has a well-defined, periodic structure.
+% fix me! 
+Similarly, IoT data captures information from automated processes that often exhibit regular behavior; for example, many images from a stationary camera will contain the same portion of the scene.
+As a result, this high degree of regular structure (i.e., concentration around the main sources of variance) within the dataset allows us to use far less data in finding the optimal basis.
+
+From this insight, we develop DROP (Dimensionality Reduction OPtimizer), a new, sampling-based technique for automatically and efficiently finding the optimal low-dimensional basis for a given time-series and/or IoT dataset.
+DROP aggressively samples input data and performs PCA on a series of increasingly large samples until convergence.
+That is, given a distance metric, error threshold $\epsilon$, and dataset, DROP iteratively subsamples the dataset and searches for an $\epsilon$-distance-preserving transformation.
+For time-series and IoT data with limited variance, this allows DROP to uncover the optimal basis in running time that is \textit{independent} of the actual dataset size and \textit{without} requiring the user to specify the intrinsic dimensionality of the dataset a priori; instead, DROP discovers it, while requiring a minimum of parameters from the user (distance metric such as $\mathbb{L}_2$ and error tolerance $\epsilon$).
+
+To realize this functionality, DROP employs new techniques for progress estimation and multi-query optimization.
+First, at each step of the optimization process, DROP must decide whether to attempt to find a better basis by training on a larger subsample or stop and return the best basis it has found thus far.
+DROP must estimate the expected improvement in basis based on its results thus far.
+To determine its current basis, DROP cannot afford to compute all pairwise distances in the data.
+Instead, DROP uses statistical sampling techniques (based on either bootstrapping or a normal approximation) to provide a confidence interval on the provided basis.
+Given a series of these estimates over increasing sample sizes, DROP performs online gradient estimation to determine the expected improvement for a larger sample.
+Second, DROP should reuse computation across bases and samples.
+When evaluating the quality of a set of bases for distance measures such as $\mathcal{L}_2$, DROP can evaluate the quality of the basis incrementally.
+If DROP finds a feasible basis using a smaller sample, it should use the results it found when processing larger samples, avoiding wasted work.
+To accomplish this, DROP both computes each principal component of PCA in small batches (via power iteration) and preserves principal components from the previous subsample (by subtracting them from the new sample, computing PCA, and combining the results via a new SVD).
+This greatly improves runtime.
+
+We demonstrate the utility of DROP both in terms of finding the optimal basis quickly and as a component in a larger pipeline, where DROP optimizes over the trade-off between dimension obtained and overall pipeline performance. This leads to significant speedups over basline solutions without compromising result quality.
+
+In summary, we make the following contributions in this work:
+
+\begin{itemize}
+\item We present DROP, an online optimizer for performing dimensionality reduction that utilizes sampling-based techniques to determine the intrinsic dimensionality of a given dataset while maintaining accurate low-dimensional representation.
+
+\item  We develop optimizations based on online aggregation, multi-query execution, progress estimation, to improve the overall runtime of data science workflows in DROP.
+
+\item We evaluate DROP on a range of real-world datasets, demonstrating order of magnitude speedups and stronger accuracy guarantees than alternative techniques from the literature.
+\end{itemize}
+
+The remainder of the paper is structured as follows. We conclude section 1 by surveying related work. Section 2 provides a more formal introduction dimensionality reduction and compares techniques used in practice. Section 3 presents the high-level architecture of the DROP algorithm and optimizations. Section 4 describes two specific implementations of DROP, one using out-of-the-box techniques, the other providing basic implementations and a framework to incorporate recent PCA theory advances. Section 5 details DROP's implementation and results. Section 6 discusses the advantages and limitations of DROP, as well as room for future work, before concluding in Section 7. 
+
+This paper is awesome~\cite{smartdust}!

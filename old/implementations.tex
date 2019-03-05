@@ -1,0 +1,190 @@
+\section{Implementations}
+\label{sec:implementations}
+
+In this section, we describe two implementations of the DROP framework. 
+The first  implementation utilizes basic, out of the box implementations of PCA/SVD, while the second provides optimizations on the first to allow for easy incorporation of theoretical advances in streaming PCA.  
+
+\subsection{Generic DROP}
+The first implementation of DROP that we provide was made with simplicity in mind. There are numerous out-of-the box implementations of full SVD and PCA, so we demonstrate how to provide significant speedups while still using these unspecialized/unoptimized techniques. We begin with the most basic form of dimensionality reduction via PCA, and slowly build up to the DROP algorithm. 
+
+\subsubsection{Na{\"i}ve Approach}
+A na{\"i}ve implementation of dimensionality reduction via PCA using SVD would take the entire dataset ($X \in \mathbb{R}^{mxn}$, and compute its right singular vectors (the $V \in \mathbb{R}^{nxn}$ matrix in an SVD). 
+By then post-multiplying the data matrix by the matrix of its right singular vectors ($Y = XV$), you transform your data to be represented in the coordinate system defined by its "principal components.'' 
+That is, each of the $i$ column vectors in $V$ represent the $i^{th}$ direction of greatest variance, should all of your data be projected onto that direction. 
+As the principal components are sorted by variance, dimensionality reduction can be performed by truncating the transformed data matrix, $\tilde{Y} = Y[:,:k], \tilde{Y} \in \mathbb{R}^{mxk}$. In order to then determine the smallest $TLB$-preserving representation, a linear scan must be performed over all possible values of $k$ from $k=1$ to $k=n$ to calculate each representation's $TLB$. 
+As soon as a representation's $TLB$ is greater than the target set by the end user, this representation can be returned. 
+
+\subsubsection{Optimization 1: Binary Search}
+As noted above, the order in which the principal components are returned is directly related to the amount of dataset variance they explain---they are sorted. 
+In addition, additional projects only improve your respresentation. 
+That is, increasing $k$ will always increase $TLB$. 
+Using this knowledge, it becomes obvious that performing a linear scan over all possible values of $k$ is wasteful. 
+Instead, we binary search over all $k$ to determine what the lowest dimensional representation satisfying the $TLB$ constraint is. 
+
+\subsubsection{Optimization 2: Training on Samples}
+Our focus is on data that exhibits highly regular behaviour, which is a nontrivial proportion of the automatically generated data we see from IoT devices and time series. 
+To this end, we realize that for our target use case, we need not compute a full SVD over the entire data matrix to compute the exact directions of maximum variance (principal components). 
+Instead, we can compute an SVD over a small subset of the data, often $independent$ of the original data size. 
+We only need as many samples as required to capture the underlying variance of the data source. As SVD over a data matrix in $\mathbb{R}^{mxn}$ is an $O(mn^2)$ operation, this provides significant speedups, as in most cases, $m >> n$. 
+
+\subsubsection{Optimization 3: Early Termination}
+As alluded to in various sections through the paper, there may not always exist a lower dimensional representation of the dataset of interest.
+For instance, consider the following two timeseries from the UCI time series repository (see fig[blah]). While it is clear that the heartbeat data exhibits highly regular structure, this is not the case for the phoneme dataset. 
+When running DROP over these two datasets, this observation is validated by the fact that the heartbeat dataset only requires $number$ training datapoints to acheive a $TLB$ of $0.98$ with a $percent$ decrease in dimension to $number$, while the phoneme dataset requires $number$ training datapoints to acheive the same $TLB$, with a $precent$ decrease in dimension to $number$.
+Although a dataset such as the phoneme data may be reduced to a lower dimension, we note that even the reduced dimension is incredibly large. In cases such as this, we want to terminate the DROP algorithm early, and report to the user that while further iterations of the algorithm may provide a lower dimensional representation, the benefits of doing so are outweighed by the cost of further iteration. Generic DROP uses a gradient-based approach to determine if additional training is meaningless, by evaluating the improvement in $k$ from the last step. If the improvement is relatively low, the DROP algorithm terminates. 
+
+\subsubsection{Generic DROP Algorithm}
+Augmenting the na{\"i}ve algorithm with the three optimizations listed above provides the generic DROP algorithm. The basic framework is as in \ref{alg:generic}, with the main difference between this Generic DROP and Optimized DROP (discussed in the next subsection) found in \textsc{FitFindK}, as in \ref{alg:generic}. More stuff about it...
+
+
+\begin{algorithm}
+\begin{algorithmic}
+\Function{FitFindK}{$X, TTLB, t, N_t$}
+	\State $fullTransform \gets \textsc{fullPCA}(X)$
+		\Comment{Compute a full PCA transform, maintaining original data size}
+	\State 	$transform, TLB, k \gets \textsc{binarySearch}(X, TTLB)$
+		\Comment{Find lowest dimensional representation that attains target $TLB$}
+
+	\Return{$transform, TLB, k$}
+\EndFunction
+\end{algorithmic}
+\caption{Generic DROP K Finding}
+\label{alg:generic}
+\end{algorithm}
+
+
+\subsection{Optimized DROP}
+
+The generic DROP algorithm provides a framework to speed up dimensionality reduction via PCA for highly regular data without access to the internal operations called by out-of-the-box PCA/SVD methods. However, there exist a number of recent theoretical results in the statistics and theoretical machine learning communities that provide methods to incrementally compute principal components with asymptotic runtime improvements over out-of-the-box methods currently in use in major libraries. To our knowledge, there is no system in place that provides a framework capable of harnessing these advances to provide the speedups that theory promises. In this section, we highlight the two key areas for improvement in the generic DROP algorithm, and provide a basic framework, and algorithm, that addresses these problems to further improve the performance of DROP. 
+
+\subsubsection{Wasted Computation per Iteration}
+DROP seeks to find low dimensional representations of highly regular data. This means in the ideal case, and in many of the datasets we tested on, the output dimension is significantly smaller than the input dimension ($m >> k$). Unfortunately, commonly used out-of-the box methods for PCA and SVD compute a full SVD over the entire dataset, when all we need are the first $k$ columns of $V$. Incrementally computing the right singular vectors of the data matrix would boost performance, and save this wasted computation. 
+
+Many techniques exist in the statistics community to incrementally compute the right singular vectors of $X$ (eigenvectors of $X^TX$). For the initial optimized DROP framework, we use the simplest of these techniques---power iteration (more specifically, simultaneous iteration). For convenience, we provide the algorithm for right singular value computation in \ref{alg:powerIter}. 
+
+If the data does indeed have a much lower dimensional representation, replacing the original out-of-box SVD with a power-iteration-based routine will be much faster. This is because [jargon needed] the first few eigenvalues concentrate. On the other hand, if such concentration does not occur, the number of iterations required for power iteration to converge will be much higher, outweighing the benefit of incremental computation. 
+
+\begin{algorithm}
+\begin{algorithmic}
+\State $A \in \mathbb{R}^{mxn}$
+	\Comment{Input Data Matrix}
+\State $k \in \mathbb{I_+}$
+	\Comment{Number of Right Singular Vectors to calculate}
+	
+\Function{SimultaneousIteration}{$A, k$}
+	\State $Q_0 \gets \text{RandomMatrix}(m,k)$ 
+		\Comment{random $mxk$ matrix with orthonormal columns}
+	\While{$Q_i, Q_{i+1}$ not close}
+		\State $Z \gets A^TAQ_i$
+		\State $Q_{i+1},R \gets \text{QR}(Z)$
+			\Comment{QR decomposition of $Z$}
+	\EndWhile
+	\Return $Q$
+\EndFunction
+\end{algorithmic}
+\caption{Simultaneous Iteration}
+\label{alg:powerIter}
+\end{algorithm}
+
+\subsubsection{Wasted Computation across Iteration}
+
+Replacing the full SVD within the DROP inner loop allows us to reuse computation within a single DROP iteration. However, every time we increase $N_t$, we  compute the singular vectors from scratch. This is wasteful, as in our target domain the data points are generally rather similar to one another. This means principal components computed for previous DROP iterations are also likely to explain a lot of the variance in the augmented dataset (with increased $N_t$). In order to combat this, and make use of the previously computed singular vectors, we can project off the contributions from along each of the previous vectors at each iteration (see \ref{alg:projectOff}), and resume singular vector calculation using the returned projection matrix. 
+
+Note that this method of iteratively computing singular vectors and projecting them off may lead to situations in which one dominant singular vector is spread across multiple components, resulting in many "partial'' principal components. To combat this effect, we must periodically refine, or compact, the set of eigenvectors. The algorithm used to refine vectors can be found in \ref{alg:projectOff}. [brain barf warning] More concretely, with $N_t$ samples, the direction of maximum variance may be along a certain axis. However, after we augment our model to train with $N_{t+1}$ samples, once you project off the contributions from the set you got with $N_t$ samples, you may end up pulling out a new orthogonal direction that explains little variance, when in reality, you would have been better off slightly modifying the original set of vectors. 
+
+\begin{algorithm}
+\begin{algorithmic}
+\State $A \in \mathbb{R}^{mxn}$
+	\Comment{Input Data Matrix}
+\State $V \in  \mathbb{R}^{nxk}$
+	\Comment{Previously computed singular vectors}
+	
+\Function{ProjectOff}{$A, V$}
+
+	\Return $A(\mathbb{I} - VV^T)$
+\EndFunction
+
+
+\Function{Refine}{$A, V$}
+	\State $Q, R \gets QR(V)$
+	\State $U, \Sigma, W^T \gets \text{SVD}(AQ)$ 
+	\State $j \gets \text{LOC}(\Sigma > \epsilon)$
+		\Comment{indices of vectors with eigenvalues greater than a threshold}		
+		
+	\Return $QW[:,j]$
+\EndFunction
+\end{algorithmic}
+\caption{Projecting away contributions and Refining}
+\label{alg:projectOff}
+\end{algorithm}
+
+\subsubsection{Optimized DROP Algorithm}
+We propose a new algorithm that expands on Generic DROP to address the two problems discussed above by providing incremental updates both within and across iterations. The benefit of this algorithm will be most apparent in the event that a large dataset can truly be accurately represented with a much smaller dimension (top few eigenvalues concentrate). Note that the core algorithm is very similar to Generic DROP: training begins with $N_0$ inital samples drawn uniformly at random from the dataset. Until a suitable representation is obtained, $N_t$ is continously incremented, and the model continues to be trained. The only difference is in the implementation of \textsc{FitFindK}, as demonstrated in \ref{alg:Optimized}. In order to calculate the best lower dimensional representation for a given $N_t$, the Optimized DROP algorithm computes $c$ singular vectors at a time, and evaluates the representation at each iteration. Once either a suitable representation has been found, or it has been determined that such a representation will not be found, Optimized DROP refines the set of vectors present, and returns the results. 
+
+
+\begin{algorithm}
+\begin{algorithmic}
+\Function{FitFindK}{$X, TTLB, t, N_t, S$}
+	\State $c \gets 5$
+		\Comment{small constant for the number of PCS you compute}
+	\State $A \gets X[:N_t, :]$
+	\State $currTLB \gets \textsc{CalcTLB}(X, XS)$
+	\State $prevTLB \gets 1$
+	\While{$\textsc{GlobalImprovement}(X,S)$ or $\textsc{terminate}(currTLB,prevTLB, TTLB)$ or $N_t < S.\textsc{cols}$}
+		\State $prevTLB \gets currTLB$
+		\State $A' \gets \textsc{ProjectOff}(A,S)$
+		\State $S \gets [S | \textsc{SimultaneousIteration}(A', c)$
+		\State $currTLB \gets \textsc{CalcTLB}(X, XS)$ 
+	\EndWhile
+	\State $S \gets \textsc{Refine}(X, S)$
+	\State $currTLB \gets \textsc{CalcTLB}(X, XS)$
+	
+	\Return $XS, currTLB, S.\textsc{cols}, S$
+\EndFunction
+\end{algorithmic}
+\caption{Optimized DROP K Finding}
+\label{alg:Optimized}
+\end{algorithm}
+
+
+
+%\Function{Classify}{$q_p,x$}
+%    \State $pq \gets \left[root\right]$ 
+%        \Comment{Node Priority Queue}
+%    \State $f_{min} \gets w_{min}(root)$
+%        \Comment{Weight Bounds}
+%    \State $f_{max} \gets w_{max}(root)$ 
+%    \While{$pq$ not empty}
+%        \If{$f_{min}$ > $q_p$}
+%            \Comment Cutoff Rule
+%            \State \Return Inlier
+%        \EndIf
+%        \If{$f_{max}$ < $q_p$}
+%            \State \Return Outlier
+%        \EndIf
+%        \If{$f_{max} - f_{min}$ < $\epsilon\cdot q_p$}
+%            \Comment Tolerance Rule
+%            \State \textbf{break}
+%        \EndIf
+%        \\
+%        \State $curnode \gets poll(pq)$
+%        \If{$curnode$ is leaf}
+%            \State \textbf{continue}
+%        \EndIf
+%        \State $f_{min} \gets f_{min} - w_{min}(curnode)$
+%        \State $f_{max} \gets f_{max} - w_{max}(curnode)$
+%        \For{$child$ in $children(curnode)$}
+%            \State $f_{min} \gets f_{min} + w_{min}(child)$
+%            \State $f_{max} \gets f_{max} + w_{max}(child)$
+%            \State $pq \gets add(pq, child)$
+%        \EndFor
+%    \EndWhile
+%    \If{$\left(f_{min}+f_{max}\right)/2 > q_p$}
+%        \State \Return Inlier
+%    \Else
+%        \State \Return Outlier
+%    \EndIf
+%\EndFunction
+
+
+

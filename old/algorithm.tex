@@ -1,0 +1,61 @@
+\section{DROP}
+\label{sec:algorithm}
+
+In order to provide PCA's excellent $TLB$ approximation in a timely manner, we propose DROP, a Dimensionality Reduction OPtimizer. DROP's goal is to find a low dimensional data representation, given fixed latency and accuracy constraints, and error tolerance. The caveat with DROP is that speedups are only acheived if there does exist a low dimensional representation, and the data does not vary greatly. In this section we describe the overall DROP architecture, and then unpack each stage of the core algorithm. 
+
+\subsection{DROP Architecture}
+At its core, the DROP architecture consists of three main steps (see figure blah). First, an intial number of training points, $N_0$, is selected to train the model on. $N_0$ is determined by the variance of the dataset. The initial datapoints are then used to the train the model, which in this case runs PCA over $N_0$ input datapoints selected uniformly at random from the entire set of datapoints. DROP then searches the space of lower dimension, $k$, in order to find the lowest dimensional representation that acheives the accuracy constraint, should one exist. This process is repeated over an increasing number of training points, $N_t$, until DROP determines that the benefit of training over additional samples will be overpowered by the runtime contraint. We now unpack each stage in detail.
+
+\subsection{Sample and Train}
+When analyzing automatically generated data, we realized that much of the generated data is regular, or highly correlated, and falls into one of few "modes.'' The intuition to be gained here is that if a model were to be trained over over a sample containing each of the key modes, such a model would generalize well to the overall dataset. To validate this, we trained our PCA model with a small number of samples, and evaluated the $TLB$ as we increased the number of samples trained on. Samples were drawn uniformly at random from the original data source, as in expectation, the sample distribution will converge to the true data distribution. Results can be seen in [figure blah]. We see that as we increase the number of samples we train on, $TLB$ rapidly plateaus for a given $k$. However, what is more surprising is how rapidly this plateau occurs. In order to better explain and quantify this behavior, we use the variance of a dataset as a heuristic for determining what proportion of the dataset a model must be trained on in order to generalize well to the population.  To demonstate why this is reasonable, for a fixed $k$, we vary the number of training points across datasets to calculate when $TLB$ plateaus. We plot (plot or table?) the results of this experiment for each dataset in [see Table Blah]. We see that as the variance of the dataset increases, the number of datapoints required to explain it increases as well (how to define the variance of a dataset?).
+
+\subsection{Test}
+Once a model is trained, the next step is to evaluate the feasibility of the model, and return a lower dimensional representation, if one exists. 
+
+
+The benefit of vanilla PCA is that you can run a single SVD and you have all transformations for lower $k$. In addition, the more components you use, the better the $TLB$ is. This means you can use modifications of binary search in order to find the lowest $k$ that acheives the accuracy bound that you want. You can also fail fast by first testing the the whole PCA to see if you have used enough samples, if feasible. Further, recent theoretical advances in incremental PCA and basic techniques such as power iteration can replace vanilla PCA to reduce computation cost by "peeling off" principal components as necessary. We implement two versions of the DROP framework, one with vanilla PCA via full SVD, and another that harnesses incremental methods. This is detailed in \ref{implementations}.
+
+ 
+In order to evaluate a specific transformation (for a given $k$), we need to compute the average $TLB$ over all the incoming data. This requires $O(n)$ operations to compute over $O(n^2)$ pairs of data points, and is infeasible for large datasets. To mitigate this, DROP offers two methods to compute the $TLB$ up to a given level of confidence. By default, DROP provides a standard confidence interval over the data, and continues to run until the lower margin exceeds the desired accuracy. As a fallback, DROP also provides a Bag of Little Bootstrap implementation, where we again use the lower bound on the confidence interval for our thresholding. 
+
+\subsection{Loop}
+
+In order to determine if we should continue to train an additional round of models, we draw inspiration from the classic skiing problem to hedge the benefits from training a better model and returning a model as soon as possible: do I continue to rent skiis for another day, or do I buy my own? The basic algorithm to determine if it is worth continuing to train on a larger sample $N_t < N_{t+1}$ is to compute the improvement in $TLB$ and reduction in the optimal $k$ between using $N_{t-1}$ and $N_t$ samples. We'll be doing some black magic gradient stuff here to figure out when we want to stop. For now, it'll probably just be when a plateau occurs, and things aren't really improving by much.
+
+
+\subsection{DROP}
+\begin{algorithm}
+\begin{algorithmic}
+\State $X \in \mathbb{R}^{mxn}$
+	\Comment{Input Data Matrix}
+\State $TTLB \in \left[0,1\right]$ 
+	\Comment{Target $TLB$}
+\State $ t \in \mathbb{R}$
+	\Comment{Runtime Constraint}
+\State $Y \in \mathbb{R}^{mxk}$
+	\Comment{Output Data Matrix}
+	
+\Function{DROP}{$X, TTLB, t$}
+	\State $N_t \gets N_0$ 
+		\Comment{Initialize number train points}
+	\While{$N_t < m$ and $\text{\sc{continueTrain}}(t)$ and $TLB < TTLB$}
+		\State{$transform, TLB, k \gets \text{\sc{fitFindK}}(X, TTLB, t, N_t)$}
+		\State{$N_{t+1} \gets \text{\sc{getNextNt}}(N_t)$}
+	\EndWhile
+	\Return{$transform$}
+\EndFunction
+\end{algorithmic}
+\caption{DROP Pseudocode}
+\label{alg:main}
+\end{algorithm}
+
+
+
+\subsection{Optimizations}
+Cache models
+
+Fail fast with CI
+
+Incrementally compute distances (kinda weird with binary search on $K$)
+
+Incrementally compute other stuff

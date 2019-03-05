@@ -1,0 +1,34 @@
+
+
+
+Dimensionality reduction is a well studied problem prevalent in both theoretical and application-oriented literature. Numerous techniques have been proposed, each with differing complexity and accuracy guarantees, such as Principal Component Analysis (PCA), Random Projections (RP), Discrete Fourier Transforms (DFT), Discrete Wavelet Transforms (DWT), and Symbolic Aggregate Approximation (SAX). While theoretical bounds on the performance of such algorithms exist, they are often overly pessimistic as they fail to account for dataset structure. Further, dataset structure can rarely be determined a priori, hence tighter bounds that do consider structure can rarely be applied. As a result, data scientists and engineers rely on time-consuming, ad-hoc, heuristic approaches to achieve reduction in excess of what theory suggests by finding a lower dimensional data representation that preserves characteristics of interest, and is compact enough to ensure feasibility of subsequent analysis steps. 
+
+In this paper, we provide an online method to help make this process simpler and more principled. There are two key challenges in selecting a suitable dimensionality reduction technique. First, it is infeasible to search over the entire space of model choice and reduced dimension. Naively computing all candidate transformations over the entire dataset is prohibitively expensive. Second, it is equally difficult to exactly evaluate the quality of a given transformation, as quality may be defined as a combination of output size, model fitting time, data transformation time, and accuracy. We describe the design and implementation of  DROP, a Dimensionality Reduction OPtimizer, to address these challenges, and quickly return a low dimensional representation satisfying performance (latency and accuracy) constraints. 
+
+Before detailing the core DROP algorithms, we begin with a survey of dimensionality techniques and evaluate their performance across production datasets and datasets from the UCR suite (Section 2). In this process, we show that PCA consistently outperforms other techniques, yet is prohibitively slow for large datasets, which is consistent with the literature. We viewed this as a challenge: is it possible to construct techniques that could improve PCA train time while preserving accuracy? We found that by focusing on automatically-generated, regularly behaving data, efficient model training becomes feasible, even with algorithms believed to be computationally intractible. By restricting the class of data and models (PCA) considered, DROP is able to take advantage of two key insights:
+
+\begin{enumerate}
+\item Automatically generated data often exhibits highly regular behavior
+\item Core techniques from relational query processing, such as online aggregation, multi-query execution and progress estimation can inspire methods for computing and evaluating multiple models simultaneously
+\end{enumerate}
+
+
+To the first point, DROP uses the variance of the incoming data to guide the decision of how many data points to train a dimensionality reduction model with. As data is often highly regular, training on a small subset of incoming data provides order of magnitude runtime improvements, while sacrificing very little with respect to accuracy. As for the second, DROP focuses on dimensionality reduction models (here, PCA) for which computing one full transformation over the dataset (where dimensionality is not reduced) <comprises the bulk of the overhead for computing all transformations of lower dimension>. This allows us to <compute> multiple models at once with little additional overhead. Many commonly used dimensionality reduction techniques fall under this category, including PCA, the focus of this work. Further, DROP incrementally evaluates the performance of a given model while reporting confidence intervals for each accuracy estimate. Once the desired level of accuracy is attained, model training can be terminated. 
+
+We analyzed the effectiveness of each of our techniques and optimizations via integration with MacroBase, an analytic monitoring engine for Internet of Things (IoT) applications. DROP efficiently and accurately reduced the dimensionality of a number of production datasets. We compare the quality of interesting events MacroBase detects both with and without DROP, and find that we gain order of magnitude speedups, with no significant reduction in detection accuracy. 
+
+We make the following contributions:
+\begin{itemize}
+\item We present DROP, an online optimizer for performing dimensionality reduction that utilizes sampling-based techniques to determine the intrinsic dimensionality of a given dataset, and obtain an accurate low-dimensional representation.
+
+\item We develop optimizations based on online aggregation, multi-query execution, progress estimation, to improve the overall runtime of data science workflows in DROP.
+
+\item We evaluate DROP on a range of real-world datasets, demonstrating order of magnitude speedups and stronger accuracy guarantees than alternative techniques from the literature.
+\end{itemize}
+
+
+
+
+To understand and form a baseline for dimensionality reduction performance, we apply various popular methods to datasets found in the UCR time series database, as well as a number of production datasets. We compare accuracy and runtime of SAX, PAA, DFT, DWT, PAA, and PCA. Accuracy is computed by calculating the average $TLB$ over an increasing subset of pairs, until our confidence interval for the mean was sufficiently small. As noted in [keogh vldb], the accuracy of all methods are roughly comparable. However, PCA, which was omitted in [keogh vldb] due to computational complexity, outperforms all other techniques in most scenarios as it provides optimal linear dimensionality reduction. 
+
+While the consensus in literature is that using PCA is unfeasible for large datasets, the improvement in accuracy over traditional results in literature (JL) pointed to the existence of a "data dependent'' method for quickly training PCA. We realized that for this domain, it is possible to make PCA more tractable for large datasets by training on a subset of all datapoints, as data is highly regular. This formed the basis for the core DROP algorithm, as if the variance of the dataset were low, we can provide results almost as good as training PCA over the entire dataset, in a fraction of the time. 

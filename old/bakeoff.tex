@@ -1,0 +1,37 @@
+\section{Background}
+\label{sec:bakeoff}
+
+In this section, we formulate the problem of dimensionality reduction and empirically compare several dimensionality reduction methods.
+
+\subsection{Dimensionality Reduction}
+
+We consider a dataset consisting of a set of $m$ $n$-dimensional vectors $a_i \in \mathbb{R}^n$. We represent the dataset as a matrix $A \in \mathbb{R}^{mxn}$, where row $i$  row corresponds to a vector $a_i$.
+
+The goal of dimensionality reduction is to compute a transformation function $T: \mathbb{R}^n \rightarrow \mathbb{R}^k$, $k < n$, that maps each point $a_i$ to $\tilde{a}_i \in \mathbb{R}^k$.
+By applying the transformation to all points in $A$, we obtain a new matrix $\tilde{A} \in \mathbb{R}^{mxk}$.
+
+There are many ways to evaluate the behavior of a given transformation.
+To remain consistent with the literature, we have elected to use preservation of pairwise distances between points as our evaluation metric, where distance can be defined over any metric space.
+For the majority of this paper, we use Euclidean distance ($\mathcal{L}_2$), and the tightness of lower bounds ($TLB$) to measure how well a transformation preserves pairwise distances across points, where $TLB(a_i,a_j) = \text{Dist}(\tilde{a}_i, \tilde{a}_j)/\text{Dist}(a_i, a_j)$. As per the name, all transformations considered result in $TLB(a_i,a_j) \leq 1$, with $TLB(a_i,a_j) = 1$ being optimal. 
+
+Classic results such as JL correspond to a maximum over all pairwise distances in a set, while studies within the database and data mining community consider average $TLB$.
+In this paper, we focus on average $TLB$ and describe how to generalize these results to bounds on quantiles (e.g., 99th percentile $TLB$).
+
+Our goal in this paper is to investigate the efficient and accurate computation of transformations $T$ that preserve $TLB$ within a user-specified accuracy.
+We are specifically interested in datasets drawn from time-varying and IoT scenarios---a property that we will exploit in our development of the DROP techniques.
+In the time domain, each $v_i$ represents a window of time, and each dimension within $v_i$ contains a reading for a subperiod within a window; for example, we could represent yearly sales via a dataset of dimension $365$, with each vector entry corresponding to a day.
+
+\subsection{Measurement Study}
+
+The most comprehensive study on time-series dimensionality reduction methods appears in VLDB 2008. Via an extensive study of eight dimensionality reduction techniques and nine distance metrics on the gold standard UCI Time Series Classification dataset (38 datasets), the authors conclude that ``the tightness of lower bounding\dots of the different representation methods for time series data have, for the most part, very little difference on various data sets.''
+
+In our study of dimensionality reduction techniques for time-series and IoT data, we sought to understand two additional concerns beyond~\cite{whateverthatpaper}.
+First, ~\cite{thatpaper} did not consider the problem of running time, which is critical as data volumes and data dimension continue to increase.
+Second, ~\cite{thatpaper} did not consider the use of PCA, on the grounds that PCA and SVD ``are untenable for large data sets.''
+While this second concern did manifest in our initial results below, we sought to understand the gap between the quality of techniques explored in~\cite{thatpaper} and optimal transformation as offered by PCA.
+
+We repeated the results of~\cite{thatpaper} for five of the eight algorithms (N.B. per the above, all were largely the same in~\cite{thatpaper}), reporting both runtime and average $TLB$ for the UCI Time Series Classification Datasets. We show the results in Table~\ref{table:todo}. On average, in line with~\cite{thatpaper}, for a dimensionality reduction of $ZZ\%$, techniques including Random Projections, Piecewise Aggregate Approximation, Fourier Transformation, and Symbolic Approximation, provided an average $TLB$ of $YY\%$. In contrast, PCA provided an average $TLB$ of $YY\%$.
+
+However, PCA (via SVD) was also the slowest by a margin of $AA\%$ to train and compute.  All of the other techniques considered are local, in that each data point can be transformed independently from the rest. PCA (via SVD), on the other hand is a global transformation, which first computes a transformation matrix based on either the entire dataset, or a subset of training data before transforming each data point. Thus, vanilla PCA consists of both an expensive $O(mn^2)$ training step in addition to the $O(mnk)$ transformation step, which scales poorly with input data size. 
+
+As such, in the remainder of this paper we ask: is it possible to retain PCA's ability to provide excellent $TLB$ approximation without incurring such an expensive running time?

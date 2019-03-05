@@ -1,0 +1,78 @@
+\documentclass[sigconf,10pt]{acmart}
+
+%\usepackage[•]{•}{microtype}
+
+\usepackage{booktabs} % For formal tables
+%\usepackage[moderate]{savetrees}
+\settopmatter{printacmref=false}
+% Copyright
+%\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+\newcommand{\minihead}[1]{{\vspace{.5em}\noindent\textbf{#1} }}
+\newcommand{\red}[1]{{\color{red}#1}}
+\newcommand{\mvar}{\red{d}}
+\newcommand{\dvar}{\red{n}}
+
+\newcommand\code[1]{\lstinline$#1$}
+
+
+
+
+\usepackage{enumitem}
+
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
+
+\theoremstyle{problem}
+\newtheorem{problem}{Problem}[section]
+
+
+
+% DOI
+%\acmDOI{10.475/123_4}
+
+% ISBN
+%\acmISBN{123-4567-24-567/08/06}
+
+%Conference
+\acmConference[DEEM'19]{DEEM}{June 2019}{Amsterdam, The Netherlands}
+\acmYear{2019}
+
+
+
+\begin{document}
+\title{DROP: Optimizing Stochastic Dimensionality \\ Reduction \red{via Workload-Aware Progressive Sampling}}
+
+
+\author{Sahaana Suri, Peter Bailis}
+\affiliation{
+  \institution{Stanford University}
+}
+
+
+\maketitle
+
+\input{abstract}
+\input{intro}
+\input{background}
+\input{sampling}
+\input{algo}
+\input{ear}
+\input{extensions}
+\input{relwork}
+\input{conclusion}
+
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{drop}
+
+%\input{appendices}
+\end{document}
