@@ -2,9 +2,10 @@
 Dimensionality reduction is a critical step in machine learning pipelines. 
 Principal Component Analysis (PCA) is frequently the method of choice, yet is often prohibitively expensive.
 Theoretical means of accelerating PCA via sampling have been proposed, but typically treat PCA as a reusable statistical operator, independent of downstream analytics workflows.
-We show how accounting for downstream analytics operations during dimensionality reduction via PCA allows stochastic methods to efficiently operate over very small (e.g., 1\%) subsamples of input data, thus reducing computational overhead and end-to-end runtime. 
-This enables end-to-end optimization over both dimensionality reduction and analytics tasks.
-By combining techniques spanning progressive sampling, approximate query processing, and cost-based optimization, we propose a dimensionality reduction optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and achieves parity with or exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
+We show how accounting for downstream analytics operations during dimensionality reduction via PCA allows stochastic methods to efficiently operate over small (e.g., 1\%) subsamples of input data, reducing computational overhead and end-to-end runtime. 
+We propose a dimensionality reduction optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and achieves parity with or exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
+%This enables end-to-end optimization over both dimensionality reduction and analytics tasks.
+%By combining techniques spanning progressive sampling, approximate query processing, and cost-based optimization, we propose a dimensionality reduction optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and achieves parity with or exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
 
 %As time series analytics workloads grow, we see an increase in time series tools and DB stuff to enable more efficient TS analytics routines. 
 %In order to facilitate this, indexing of time series is important---and DR plays a critical step in this.

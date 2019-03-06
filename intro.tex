@@ -20,7 +20,7 @@ This raises a critical question: can we develop a data and workload-dependent me
 \label{fig:pipeline}
 \end{figure}
 
-To this end, we develop DROP, a system that performs whole-workload runtime optimization by dynamically identifying the amount of sampling required for stochastic PCA.
+To this end, we develop DROP\footnote{\href{https://github.com/stanford-futuredata/DROP}{https://github.com/stanford-futuredata/DROP}}, a system that performs whole-workload runtime optimization by dynamically identifying the amount of sampling required for stochastic PCA.
 DROP takes a high-dimensional dataset,\footnote{Our primary focus \red{for performance evaluation is a case study on time series similarity search,} given the amount of study in the database community~\cite{keogh-study} and the resurgence of interest in time series analytics systems~\cite{macrobase,macrobase-cidr,trill-signal}. We provide a preliminary generalizability analysis in Section~\ref{sec:experiments}.}  property to preserve (e.g., pairwise Euclidean distance to 5\%), and optional runtime model expressing downstream workload performance as a function of dimensionality (e.g., for k-Nearest Neighbors [k-NN], runtime is linear in dimensionality). 
 DROP returns a low-dimensional transformation for the input using as few samples as needed to minimize the projected overall workload runtime while satisfying quality constraints.
 

@@ -2,34 +2,37 @@
 \section{Experimental Evaluation}
 \label{sec:experiments}
 
-We now evaluate DROP's DR efficiency along three dimensions: runtime, accuracy, and extensibility. We demonstrate: 
+We evaluate DROP's efficiency along three dimensions: runtime, accuracy, and extensibility. We demonstrate that (1) DROP outperforms PAA and FFT in end-to-end, repetitive-query workloads, (2) DROP's optimizations each contribute to performance,  and (3) DROP extends beyond time series.
 
+\begin{comment}
 \begin{enumerate}[itemsep=0.5em]
 \item{DROP outperforms PAA and FFT in end-to-end, repetitive-query workloads (\S\ref{subsec:runtime}).}	
 \item{DROP's optimizations for sampling, downstream task and work reuse contribute to performance (\S\ref{subsec:lesion}).}
 \item{DROP's DR runtime scales with intrinsic dimensionality, independently of data size (\S\ref{subsec:scale}).}
 \item{DROP extends beyond our time series case study (\S\ref{subsec:nonts}).}	
 \end{enumerate}
+\end{comment}
 
 \subsection{Experimental Setup}
 \label{subsec:setup}
-\minihead{Implementation} We implement DROP as an in-memory, batch-oriented feature transformation dataflow operator\footnote{\href{https://github.com/stanford-futuredata/DROP}{https://github.com/stanford-futuredata/DROP}}
-in Java using \red{the multi-threaded Matrix-Toolkits-Java (MTJ) library~\cite{mtj} and netlib-java~\cite{netlib} linked against Intel MKL~\cite{mkl} for compute-intensive linear algebra operations. 
+\minihead{Implementation} We implement DROP as an in-memory, batch-oriented feature transformation dataflow operator in Java using \red{the multi-threaded Matrix-Toolkits-Java (MTJ) library~\cite{mtj} and netlib-java~\cite{netlib} linked against Intel MKL~\cite{mkl} for compute-intensive linear algebra operations. 
 We use multi-threaded JTransforms~\cite{jtransforms} for FFT, and implement multi-threaded PAA from scratch.}
 %To provide an apples-to-apples comparison with our single-core PAA implementation, we disable multithreading in MTJ---enabling multi-core will equally improve all PCA-based methods across the board, including DROP, relative to PAA.
 We use \red{the} Statistical Machine Intelligence and Learning Engine (SMILE) library~\cite{smile} for k-NN with different index structures\red{, and k-means}. 
 
-\minihead{Environment} We run experiments on a server with \red{two Intel Xeon E5-2690v4 @ 2.60Ghz CPUs, each with 14 physical and 28 virtual cores (with hyper-threading). The server contains 512GB of RAM.}
-We report indexing/DR and downstream workload runtimes in isolation, excluding data loading and parsing time.
+\begin{comment}
+\minihead{Environment} We use a server with \red{two Intel Xeon E5-2690v4 @ 2.60Ghz CPUs, each with 14 physical and 28 virtual cores (with hyper-threading). The server contains 512GB of RAM.}
+We exclude data loading and parsing time.
+\end{comment}
 
 \minihead{Datasets} 
-To showcase DROP's performance in an end-to-end setting and contributions from each optimization, we use several real world datasets.
-We first consider data from the UCR Time Series Classification Archive~\cite{ucr}, the gold standard from the time series data mining community, for our  indexing experiments and lesion studies. 
-We exclude datasets that have fewer than 1 million entries, and fewer datapoints than dimensionality, leaving 14 UCR datasets. 
+%To showcase DROP's performance in an end-to-end setting and contributions from each optimization, we use several real world datasets.
+We first consider the UCR Time Series Classification Archive~\cite{ucr} for indexing experiments and lesion studies. 
+We exclude datasets with fewer than 1 million entries, and fewer datapoints than dimensionality, leaving 14 datasets. 
 %We also consider a larger, labeled earthquake dataset from XXX~\cite{quake}.
 
-Further, due to the relatively small size of these time series datasets, we consider three additional datasets to showcase tangible wall-clock runtime improvements with DROP.
-We use the standard MNIST hand-written digits dataset~\cite{mnist}, the FMA featurized music dataset~\cite{fma}, and a labeled sentiment analysis IMBD dataset~\cite{imdb}, which also demonstrate extensibility beyond time series data. 
+Due to the relatively small size of these time series datasets, we consider three additional datasets to showcase tangible wall-clock runtime improvements with DROP.
+We use the standard MNIST hand-written digits dataset~\cite{mnist}, the FMA featurized music dataset~\cite{fma}, and a labeled sentiment analysis IMBD dataset~\cite{imdb}, which also demonstrates extensibility beyond time series data. 
 
 \minihead{DROP Configuration} We use a runtime cost function for k-NN obtained via linear interpolation on data of varying dimension (implemented via cover trees~\cite{ctree}, K-D trees~\cite{kdtree},or brute force search in SMILE).
 To evaluate the sensitivity to cost model, we also report on the effect of operating without a cost model (i.e., sample until convergence) in Section~\ref{subsec:lesion}.
@@ -44,13 +47,12 @@ Each computes a transformation over the entire data, then performs binary search
 
 \minihead{Similarity Search/k-NN Setup} 
 While many methods for similarity search exist, as in~\cite{keogh-study}, we consider k-NN in our evaluation as it is classically used and  interoperates with new use cases including one-shot learning and deep metric learning~\cite{knn1, knn2, knn3}.
-\red{Further, adopting k-NN (and, k-means in Section~\ref{subsec:nonts}), which is not a classically supported relational operator, as our target task demonstrates that simple runtime estimation routines can be extended to time-series-specific  operators.}
+%\red{Further, adopting k-NN (and, k-means in Section~\ref{subsec:nonts}), which is not a classically supported relational operator, as our target task demonstrates that simple runtime estimation routines can be extended to time-series-specific  operators.}
 To evaluate DR performance when used with downstream indexes, we vary k-NN's multidimensional index structure: cover trees, K-D trees, or no index. 
 
-As previously noted, end-to-end performance of similarity search depends on the number of queries in the workload. 
-DROP is optimized for the repeated-query use case. 
+End-to-end performance depends on the number of queries in the workload, and DROP is optimized for the repeated-query use case. 
 Due to the small size of the UCR datasets, we choose a 1:50 ratio of data indexed to number of query points, and vary this index-query ratio in later microbenchmarks and experiments. 
-We also provide a simple cost model for assessing the break-even point that balances the cost of a given DR technique against it's indexing benefits to each query point.
+We also provide a cost model for assessing the break-even point that balances the cost of a given DR technique against it's indexing benefits to each query point.
 
 
 \begin{figure*}[t!]
@@ -73,20 +75,23 @@ This occurs as many of the datasets used in this experiment are small and posses
 }
 We do not display k-NN accuracy as all techniques meet the $TLB$ constraint, and achieve the same accuracy within $1\%$.
 
-On average, DROP returns transformations that are $2.3\times$ and  $1.4\times$ smaller than PAA and FFT, respectively, translating to significantly smaller k-NN query time. 
-As a result, end-to-end runtime with DROP is on average \red{$2.2\times$ and $1.4\times$ (up to $10\times$ and $3.9\times$)} faster than PAA and FFT, respectively, when using brute force linear search,  \red{$2.3\times$ and $1.2\times$ (up to $16\times$ and $3.6\times$)}  faster when using K-D trees, and \red{$1.9\times$ and $1.2\times$ (up to $5.8\times$ and $2.6\times$)} faster when using cover trees.
-We demonstrate in our lesion study in Section~\ref{subsec:lesion} that DROP also outperforms our baseline PCA via SVD implementation, as well as our SVD-Halko implementation. 
+On average, DROP returns transformations that are $2.3\times$ and  $1.4\times$ smaller than PAA and FFT, translating to significantly smaller k-NN query time. 
+End-to-end runtime with DROP is on average \red{$2.2\times$ and $1.4\times$ (up to $10\times$ and $3.9\times$)} faster than PAA and FFT, respectively, when using brute force linear search,  \red{$2.3\times$ and $1.2\times$ (up to $16\times$ and $3.6\times$)}  faster when using K-D trees, and \red{$1.9\times$ and $1.2\times$ (up to $5.8\times$ and $2.6\times$)} faster when using cover trees.
+When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in Section~\ref{subsec:lesion})
+Determining if DROP is a good fit for a dataset is an exciting area for future work (\S\ref{subsec:disc}).
 
-When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in Section~\ref{subsec:lesion}). 
-Thus, in the end of the evaluation section, we provide guidelines on how to determine if DROP is a good fit for a dataset. 
+%We demonstrate in our lesion study in Section~\ref{subsec:lesion} that DROP also outperforms our baseline PCA via SVD implementation, as well as our SVD-Halko implementation. 
+
+%When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in Section~\ref{subsec:lesion}). 
+%Thus, in the end of the evaluation section, we provide guidelines on how to determine if DROP is a good fit for a dataset. 
 
 \minihead{Varying Index-Query Ratio}
 
-DROP is optimized for scenarios with highly structured data and a low index-query ratio, as in many streaming and/or high-volume data use cases.
-That is, if there are many more data points queried than used for training/constructing an index, DROP will outperform alternatives. 
-A natural question that arises is in which concrete scenarios is it beneficial to use DROP, and in which would a lower quality but faster reduction suffice. 
+DROP is optimized for highly structured data and a low index-query ratio, as in many streaming and/or high-volume data use cases.
+If there are many more data points queried than used for training/constructing an index, DROP will outperform alternatives. 
+A natural question that arises is in which scenarios is it beneficial to use DROP, and in which would a lower quality but faster reduction suffice. 
 Domain experts are typically aware of the scale of their query workloads. 
-However, lacking this knowledge, we provide a heuristic to answer this question given rough runtime and cardinality estimates of the downstream task at hand and the choice of alternative DR technique.
+However, we also provide a heuristic to answer this question given rough runtime and cardinality estimates of the downstream task at hand and the choice of alternative DR technique.
 
 Let $x_d$ and $x_a$ be the per-query runtime of running a downstream task with the output of DROP and a given alternative method, respectively. 
 Let $r_d$ and $r_a$ denote the amortized per-datapoint runtime of DROP and the alternative method, respectively. 
@@ -116,12 +121,12 @@ For iSax2+, index construction is on average $143\times$ (up to $389\times$) slo
 
 We also verify that DROP is able to perform well when using downstream similarity search tasks relying on alternative distance metrics, namely, Dynamic Time Warping (DTW)---a commonly used distance measure in the literature~\cite{isaxorig}. 
 As proof-of-concept, we implement a 1-NN task using DTW with a 1:1 index-query ratio, and find that even with this high ratio, DROP provides on average $1.2\times$ and $1.3\times$ runtime improvement over PAA and FFT, respectively.
-As DTW is known to be incredibly slow~\cite{dtwslow}, it is unsurprising that DROP provides large runtime benefits for tasks using DTW without additional pruning---in terms of absolute runtime, DROP saves 2.8 minutes on the FordA dataset compared to PAA, and 2.2 minutes on the wafer dataset compared to FFT.
+%As DTW is known to be incredibly slow~\cite{dtwslow}, it is unsurprising that DROP provides large runtime benefits for tasks using DTW without additional pruning---in terms of absolute runtime, DROP saves 2.8 minutes on the FordA dataset compared to PAA, and 2.2 minutes on the wafer dataset compared to FFT.
 
 
-Finally, as the considered time series are fairly short, we perform the same experiment over a standard gaussian random walk synthetic dataset~\cite{coconut,ssh} consisting of 50,000 time series of dimension 10,000. 
-Each time series is generated by, for each time step, generating a random value distributed via standard normal distribution, and adding it to the running sum of all previous time steps. 
-We find that DROP takes 4150ms to complete, whereas PAA and FFT take 5523ms (1.3$\times$ faster) and 15329ms (3.7$\times$ faster), respectively. 
+%Finally, as the considered time series are fairly short, we perform the same experiment over a standard gaussian random walk synthetic dataset~\cite{coconut,ssh} consisting of 50,000 time series of dimension 10,000. 
+%Each time series is generated by, for each time step, generating a random value distributed via standard normal distribution, and adding it to the running sum of all previous time steps. 
+%We find that DROP takes 4150ms to complete, whereas PAA and FFT take 5523ms (1.3$\times$ faster) and 15329ms (3.7$\times$ faster), respectively. 
 }
 
 
@@ -133,14 +138,24 @@ We perform a factor analysis of the incremental runtime and dimensionality contr
 We only display the results of k-NN with cover trees; the results hold for the other indexes.
 We use a 1:1 index-query ratio \red{with data inflated by 5$\times$} to better highlight the effects of each contribution to the DR routine, and display average results over the UCR datasets in Figure~\ref{fig:lesion}, excluding Phoneme.
 
+
+\begin{figure}
+\includegraphics[width=\linewidth]{figs/lesion-all.pdf}
+\caption[]{Lesion studies over the UCR datasets.}
+\label{fig:lesion}
+\end{figure}
+
 Figure~\ref{fig:lesion} first demonstrates the boost from using SVD-Halko over a na\"ive implementation of PCA via SVD, which comes from not computing the full transformation a priori, incrementally binary searching as needed. 
 It then shows the runtime boost obtained from running on samples until convergence, where DROP samples and terminates after the returned lower dimension from each iteration plateaus.
-This represents the na\"ive sampling-until-convergence approach described in Section~\ref{sec:sampling} that DROP defaults to sans user-specified cost model.
+This represents the na\"ive sampling-until-convergence approach that DROP defaults to sans user-specified cost model.
 We finally introduce cost based optimization and work reuse.
 Each of these optimizations improves runtime, with the exception of work reuse, which has a negligible impact on average but disproportionately impacts certain datasets. 
 
+\begin{comment}
 \red{On average, DROP is $2.1\times$ faster (up to $41\times$) than PCA via SVD, and $1.6\times$ faster than SVD-Halko (up to $3.3\times$). DROP with cost-based optimization is faster than  sampling to convergence by $1.2\times$ on average, but this default strategy is still $1.4\times$ faster than SVD-Halko on average.}
 
+
+\begin{comment}
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/lesion-rev.pdf}
 \caption[]{Average result of lesion study over the UCR datasets.}
@@ -153,29 +168,30 @@ Each of these optimizations improves runtime, with the exception of work reuse, 
 \label{fig:phoneme_lesion}
 \end{figure}
 
-Work reuse typically only slightly affects end-to-end runtime as it is useful primarily when a large number of DROP iterations are required (i.e., when dataset spectrum is not well-behaved).
-We also observe this behavior on certain small datasets with moderate intrinsic dimensionality, such as the yoga dataset in Figure~\ref{fig:yoga-lesion}. 
-Work reuse provides a $15\%$ improvement in addition to cost based optimization.
-
-DROP's sampling operates on the premise that the dataset has data-point-level redundancy. 
-However, datasets without this structure are more difficult to reduce the dimensionality of.
-Phoneme is an example of one such dataset (Figure~\ref{fig:phoneme_lesion}).  
-In this setting, DROP \red{incrementally examines a large proportion of data before enabling cost-based optimization,} resulting in a performance penalty.
-We discuss extensions to DROP to mitigate this in the extended version of this manuscript. 
-
-%Section~\ref{subsec:disc}.%, and provide all lesion studies in the Appendix.
-
-
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/yoga-rev.pdf}
 \caption[]{Lesion study over the UCR yoga dataset. Work reuse provides a $15\%$ runtime improvement.}
 \label{fig:yoga-lesion}
 \end{figure}
+\end{comment}
 
+Work reuse typically only slightly affects end-to-end runtime as it is useful primarily when a large number of DROP iterations are required.
+We also observe this behavior on certain small datasets with moderate intrinsic dimensionality, such as the yoga dataset in Figure~\ref{fig:lesion}b. 
+Work reuse provides a $15\%$ improvement in addition to cost based optimization.
+
+DROP's sampling operates on the premise that the dataset has data-point-level redundancy. 
+However, datasets without this structure are more difficult to reduce the dimensionality of.
+Phoneme is an example of one such dataset (Figure~\ref{fig:lesion}c).  
+In this setting, DROP \red{incrementally examines a large proportion of data before enabling cost-based optimization,} resulting in a performance penalty.
+%We discuss extensions to DROP to mitigate this in the extended version of this manuscript. 
+
+%Section~\ref{subsec:disc}.%, and provide all lesion studies in the Appendix.
+
+
+
+\begin{comment}
 \subsection{Scalability}
 \label{subsec:scale}
-
-
 Data generated by automated processes such as time series often grows much faster in size than intrinsic dimensionality.
 DROP can exploit this intrinsic dimensionality to compute PCA faster than traditional methods as it only processes an \emph{entire} dataset if a low intrinsic dimensionality does not exist. 
 
@@ -192,6 +208,8 @@ This near-constant runtime contrasts with PCA via SVD and SVD-Halko as they do n
 \caption[]{Effect of dataset size on time and output dimension ($k$), with constant intrinsic data dimensionality of 8. DROP runtime with a fixed schedule remains near constant.}
 \label{fig:increasingdata}
 \end{figure}
+
+\end{comment}
 
 
 \begin{figure}
