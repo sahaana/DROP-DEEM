@@ -9,19 +9,16 @@ database~\cite{keogh-indexing,local-dr,charu-ss,dynamic-ss}, data
 mining~\cite{sax,paa}, statistics and machine
 learning~\cite{alecton,shamir}, and theoretical CS~\cite{bernstein,pca-stoc} communities.
 
-Recent breakthroughs in the theoretical
-statistics community provided new algorithms for PCA that promise
-substantial scalability improvements without compromising result
-quality~\cite{alecton,tropp,re-new}. 
-Foremost among these techniques are advanced stochastic methods~\cite{re-new,shamir}, and techniques for randomized SVD~\cite{tropp}.
-While we default to the latter for use by DROP's PCA operator, DROP's modular architecture makes it simple to use any method in its place, including recent systems advances in scalable PCA~\cite{ppca-sigmod}.
+Recent breakthroughs in the theoretical statistics community provided new algorithms for PCA that promise substantial scalability improvements without compromising result quality~\cite{alecton,tropp,re-new, tropp}. 
+%Foremost among these techniques are advanced stochastic methods~\cite{re-new,shamir}, and techniques for randomized SVD~\cite{tropp}.
+%While we default to the latter for use by DROP's PCA operator, DROP's modular architecture makes it simple to use any method in its place, including recent systems advances in scalable PCA~\cite{ppca-sigmod}.
 %As a proof of concept of our method, we provide implementations of full SVD-based PCA, power iteration, as well as Oja's method. 
 To the best of our knowledge, advanced methods for PCA
 have not been empirically compared head-to-head with conventional
-dimensionality reduction approaches such as Piecewise Approximate
-Averaging~\cite{paa}, especially on real datasets. 
+DR approaches such as Piecewise Approximate
+Averaging~\cite{paa}.%, especially on real datasets. 
 In addition, DROP
-\emph{combines} these methods with row-level sampling to provide benefits similar to using stochastic methods for PCA, regardless of the chosen PCA subroutine. 
+\emph{combines} these methods with row-level sampling to provide benefits similar to using stochastic methods for PCA.
 
 %This setting differs from that of Moving Window (or Rolling) PCA in that the these methods assume overlap among the data samples, whereas here our samples are independently drawn from the same underlying data distribution~\cite{mwpca}.
 
@@ -37,7 +34,7 @@ as in online aggregation~\cite{onlineagg}, DROP performs progressive
 sampling.  In contrast
 with more general data dimensionality estimation
 methods~\cite{dr-estimation}, DROP optimizes for
-$TLB$. As we illustrated in Section~\ref{sec:experiments}, this
+$TLB$. As we illustrated in \S\ref{sec:experiments}, this
 strategy confers substantial runtime improvements.
 While DROP performs simple uniform sampling, the literature contains a wealth of techniques for various biased sampling techniques~\cite{surajit-sample, surajit-2}.
 Finally, DROP performs online progress estimation to minimize the

@@ -1,10 +1,16 @@
 \section{Similarity Search Case Study}
 \label{sec:sampling}
 
-To tackle workload-aware DR, we first perform a case study focusing on time series similarity search by revisiting a widely cited empirical comparison of DR techniques from VLDB 2008~\cite{keogh-study}. 
-We show that PCA can outperform classic techniques (return low $k$), but at a high computational cost ($R$).
-We then demonstrate how sample-based PCA methods can bridge this gap, but that the number of samples required varies per dataset.
-Finally, we show how progressively increasing the sampling rate can help dynamically identify how much to sample a given dataset, thus providing a foundation for workload-aware DR.
+To tackle workload-aware DR, we first perform a case study on time series similarity search by revisiting a comparison of DR techniques from VLDB 2008~\cite{keogh-study}. 
+We show that PCA can outperform classic techniques (low $k$), but at a high cost ($R$).
+We then demonstrate how sample-based PCA can bridge this gap, but that the number of samples required varies per dataset.
+Finally, we show how dynamically increasing the sampling rate can help identify how much to sample a given dataset, providing a foundation for workload-aware DR.
+
+\begin{figure}
+\includegraphics[width=\linewidth]{figs/progressive.pdf}
+\caption[]{ Improvement in representation size for  $TLB = 0.80$ across three datasets. Higher sampling rates improve quality until reaching a state equivalent to running PCA over the full dataset ("convergence")}
+\label{fig:progressive}
+\end{figure}
 
 \subsection{PCA Speed vs. Quality}
 
@@ -41,13 +47,9 @@ We thus turn to progressive sampling (gradually increasing the sample size) to i
 Figure~\ref{fig:progressive} shows how the dimensionality required to attain a given $TLB$ changes when we vary dataset and proportion of data sampled.
 Increasing the number of samples provides lower dimensional transformations for the same quality.
 However, this decrease in dimension plateaus as the number of samples increases.
-Thus, while progressive sampling would allow us to tune the amount of time spent on DR, we must determine when the downstream value of decreased dimension is overpowered by the cost of additional DR---that is, whether to sample to convergence (evaluated in Section~\ref{subsec:lesion}) or terminate early (e.g., at $0.3$ proportion of data sampled for SmallKitchenAppliances). 
+Thus, while progressive sampling would allow us to tune the amount of time spent on DR, we must determine when the downstream value of decreased dimension is overpowered by the cost of additional DR---that is, whether to sample to convergence (evaluated in \S\ref{subsec:lesion}) or terminate early (e.g., at $0.3$ proportion of data sampled for SmallKitchenAppliances). 
 
-\begin{figure}
-\includegraphics[width=\linewidth]{figs/progressive.pdf}
-\caption[]{ Improvement in representation size for  $TLB = 0.80$ across three datasets. Higher sampling rates improve quality until reaching a state equivalent to running PCA over the full dataset ("convergence")}
-\label{fig:progressive}
-\end{figure}
+
 
 
 

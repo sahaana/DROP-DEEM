@@ -32,22 +32,22 @@ We exclude datasets with fewer than 1 million entries, and fewer datapoints than
 %We also consider a larger, labeled earthquake dataset from XXX~\cite{quake}.
 
 Due to the relatively small size of these time series datasets, we consider three additional datasets to showcase tangible wall-clock runtime improvements with DROP.
-We use the standard MNIST hand-written digits dataset~\cite{mnist}, the FMA featurized music dataset~\cite{fma}, and a labeled sentiment analysis IMBD dataset~\cite{imdb}, which also demonstrates extensibility beyond time series data. 
+We use the standard MNIST hand-written digits dataset~\cite{mnist}, the FMA featurized music dataset~\cite{fma}, and a labeled sentiment analysis IMBb dataset~\cite{imdb}, which also demonstrates extensibility beyond time series data. 
 
 \minihead{DROP Configuration} We use a runtime cost function for k-NN obtained via linear interpolation on data of varying dimension (implemented via cover trees~\cite{ctree}, K-D trees~\cite{kdtree},or brute force search in SMILE).
-To evaluate the sensitivity to cost model, we also report on the effect of operating without a cost model (i.e., sample until convergence) in Section~\ref{subsec:lesion}.
+To evaluate the sensitivity to cost model, we also report on the effect of operating without a cost model (i.e., sample until convergence) in \S\ref{subsec:lesion}.
 We set $TLB$ constraints such that the accuracy of K-NN tasks remain unchanged before and after indexing via DR, corresponding to $B = 0.99$  for the UCR datasets.
 Unless otherwise specified, we use a default sampling schedule that begins with and increases by $1\%$ of the input.
 It is possible to optimize (and possibly overfit) this schedule for our target time series, but we provide a conservative, more general schedule.
-%%%%We further discuss sampling schedules and properties that make a dataset amenable to DROP in Section~\ref{subsec:disc}. 
+%%%%We further discuss sampling schedules and properties that make a dataset amenable to DROP in \S\ref{subsec:disc}. 
 
 \minihead{Baselines} We report runtime, accuracy, and reduced dimension compared to FFT, PAA, PCA via SVD-Halko, and PCA via SVD. 
 Each computes a transformation over the entire data, then performs binary search to identify the smallest dimensional basis that satisfies the target $TLB$. 
-%%%%We further discuss choice of PCA subroutine in Section~\ref{subsec:pcaexp}. 
+%%%%We further discuss choice of PCA subroutine in \S\ref{subsec:pcaexp}. 
 
 \minihead{Similarity Search/k-NN Setup} 
 While many methods for similarity search exist, as in~\cite{keogh-study}, we consider k-NN in our evaluation as it is classically used and  interoperates with new use cases including one-shot learning and deep metric learning~\cite{knn1, knn2, knn3}.
-%\red{Further, adopting k-NN (and, k-means in Section~\ref{subsec:nonts}), which is not a classically supported relational operator, as our target task demonstrates that simple runtime estimation routines can be extended to time-series-specific  operators.}
+%\red{Further, adopting k-NN (and, k-means in \S\ref{subsec:nonts}), which is not a classically supported relational operator, as our target task demonstrates that simple runtime estimation routines can be extended to time-series-specific  operators.}
 To evaluate DR performance when used with downstream indexes, we vary k-NN's multidimensional index structure: cover trees, K-D trees, or no index. 
 
 End-to-end performance depends on the number of queries in the workload, and DROP is optimized for the repeated-query use case. 
@@ -77,21 +77,20 @@ We do not display k-NN accuracy as all techniques meet the $TLB$ constraint, and
 
 On average, DROP returns transformations that are $2.3\times$ and  $1.4\times$ smaller than PAA and FFT, translating to significantly smaller k-NN query time. 
 End-to-end runtime with DROP is on average \red{$2.2\times$ and $1.4\times$ (up to $10\times$ and $3.9\times$)} faster than PAA and FFT, respectively, when using brute force linear search,  \red{$2.3\times$ and $1.2\times$ (up to $16\times$ and $3.6\times$)}  faster when using K-D trees, and \red{$1.9\times$ and $1.2\times$ (up to $5.8\times$ and $2.6\times$)} faster when using cover trees.
-When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in Section~\ref{subsec:lesion})
+When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in \S\ref{subsec:lesion})
 Determining if DROP is a good fit for a dataset is an exciting area for future work (\S\ref{subsec:disc}).
 
-%We demonstrate in our lesion study in Section~\ref{subsec:lesion} that DROP also outperforms our baseline PCA via SVD implementation, as well as our SVD-Halko implementation. 
+%We demonstrate in our lesion study in \S\ref{subsec:lesion} that DROP also outperforms our baseline PCA via SVD implementation, as well as our SVD-Halko implementation. 
 
-%When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in Section~\ref{subsec:lesion}). 
+%When evaluating Figure~\ref{fig:knnAll}, it becomes clear that DROP's runtime improvement is data dependent for both smaller datasets, and for datasets that do not possess a low intrinsic dimension (such as Phoneme, elaborated on in \S\ref{subsec:lesion}). 
 %Thus, in the end of the evaluation section, we provide guidelines on how to determine if DROP is a good fit for a dataset. 
 
 \minihead{Varying Index-Query Ratio}
 
-DROP is optimized for highly structured data and a low index-query ratio, as in many streaming and/or high-volume data use cases.
-If there are many more data points queried than used for training/constructing an index, DROP will outperform alternatives. 
-A natural question that arises is in which scenarios is it beneficial to use DROP, and in which would a lower quality but faster reduction suffice. 
-Domain experts are typically aware of the scale of their query workloads. 
-However, we also provide a heuristic to answer this question given rough runtime and cardinality estimates of the downstream task at hand and the choice of alternative DR technique.
+DROP is optimized for a low index-query ratio, as in many streaming and/or high-volume data use cases.
+If there are many more data points queried than used for constructing an index, DROP will outperform alternatives. 
+A natural question that arises is in which scenarios is it beneficial to use DROP. 
+While domain experts are typically aware of the scale of their query workloads, we also provide a heuristic to answer this question given rough runtime and cardinality estimates of the downstream task and the alternative DR technique.
 
 Let $x_d$ and $x_a$ be the per-query runtime of running a downstream task with the output of DROP and a given alternative method, respectively. 
 Let $r_d$ and $r_a$ denote the amortized per-datapoint runtime of DROP and the alternative method, respectively. 
@@ -113,8 +112,8 @@ As the ratio decreases to 1:50, DROP is \red{$1.24\times$} faster than FFT and \
 
 \red{
 \minihead{Time Series Similarity Search Extensions}
-Given the breadth of research in time series indexing, a natural question to ask is how DROP, a general operator for PCA, compares to state-of-the-art time series indexes. 
-As a preliminary evaluation, we consider iSAX2+~\cite{isax}, a state-of-the-art indexing tool  in a 1:1 index-query ratio setting, using a publicly available Java implementation~\cite{isaxcode}. 
+Given the breadth of research in time series indexing, we evaluate how DROP, a general operator for PCA, compares to time series indexes. 
+As a preliminary evaluation, we consider iSAX2+~\cite{isax}, a state-of-the-art indexing tool, in a 1:1 index-query ratio setting, using a publicly available Java implementation~\cite{isaxcode}. 
 While these indexing techniques also optimize for the low index-query ratio setting, we find index construction to be a large bottleneck in these workloads. 
 For iSax2+, index construction is on average $143\times$ (up to $389\times$) slower than DR via DROP, but is on average only $11.3\times$ faster than k-NN on the reduced space.  However, given high enough query workload, these specialized techniques will surpass DROP.
 
@@ -130,13 +129,13 @@ As proof-of-concept, we implement a 1-NN task using DTW with a 1:1 index-query r
 }
 
 
-\subsection{Lesion Study}
+\subsection{Factor Analysis}
 \label{subsec:lesion}
 
 
-We perform a factor analysis of the incremental runtime and dimensionality contributions of each of DROP's components compared to baseline SVD methods. 
+We perform a factor analysis of the incremental runtime contributions of each of DROP's components compared to baseline SVD methods. 
 We only display the results of k-NN with cover trees; the results hold for the other indexes.
-We use a 1:1 index-query ratio \red{with data inflated by 5$\times$} to better highlight the effects of each contribution to the DR routine, and display average results over the UCR datasets in Figure~\ref{fig:lesion}, excluding Phoneme.
+We use a 1:1 index-query ratio \red{with data inflated by 5$\times$} to better highlight the effects of each contribution to the DR routine.%, and display average results over the UCR datasets in Figure~\ref{fig:lesion}, excluding Phoneme.
 
 
 \begin{figure}
@@ -185,7 +184,7 @@ Phoneme is an example of one such dataset (Figure~\ref{fig:lesion}c).
 In this setting, DROP \red{incrementally examines a large proportion of data before enabling cost-based optimization,} resulting in a performance penalty.
 %We discuss extensions to DROP to mitigate this in the extended version of this manuscript. 
 
-%Section~\ref{subsec:disc}.%, and provide all lesion studies in the Appendix.
+%\S\ref{subsec:disc}.%, and provide all lesion studies in the Appendix.
 
 
 
@@ -225,21 +224,21 @@ This near-constant runtime contrasts with PCA via SVD and SVD-Halko as they do n
 We consider generalizability beyond our initial case study along two axes: data domain and downstream workload. These preliminary results show promise in extension to additional domains and target tasks.  
 
 \subsubsection*{Data Domain}
-We examine classification/similarity search workloads across  image classification, music analysis, and natural language processing. 
+We examine classification/similarity search workloads across image classification, music analysis, and natural language processing. 
 }
-To better show the trade-off in DR and downstream workload, we repeat the k-NN retrieval experiments with a 1:1 index-query ratio.
-We use the MNIST hand-written digit image dataset containing 70,000 images of dimension 784 (obtained by flattening each $28 \times 28$-dimensional image into a single vector~\cite{mnist}, combining both the provided training and testing datasets); FMA's featurized music dataset, providing  518 features across 106,574 music tracks; a bag-of-words representation of an IMDB sentiment analysis dataset across 25,000 movies with 5000 features~\cite{imdb}; \red{Fashion MNIST's 70,000 images of dimension 784~\cite{fashion}}.  
+We repeat the k-NN retrieval experiments with a 1:1 index-query ratio.
+We use the MNIST hand-written digit image dataset of 70,000 images of dimension 784 (obtained by flattening each $28 \times 28$-dimensional image into a single vector~\cite{mnist}, combining both the training and testing datasets); FMA's featurized music dataset, providing 518 features across 106,574 music tracks; a bag-of-words representation of an IMDb sentiment analysis dataset across 25,000 movies with 5000 features~\cite{imdb}; \red{Fashion MNIST's 70,000 images of dimension 784~\cite{fashion}}.  
 We present our results in Figure~\ref{fig:beyond}.
-As the given datasets are larger than the ones presented in~\cite{ucr}, DROP's ability to find a $TLB$-preserving low dimensional basis is more valuable as this more directly translates to significant reduction in end-to-end runtime---up to \red{a 7.6 minute wall-clock improvement in MNIST, 42 second improvement in Fashion MNIST, 1.2 minute improvement in music features, and 8 minute improvement in IMDB compared to PAA. 
-These wall-clock runtime effects will only be amplified as the index-query ratio decreases, to be more typical of the repeated-query setting. 
+As these datasets are larger than those in~\cite{ucr}, DROP's ability to find a $TLB$-preserving low dimensional basis is more valuable as this more directly translates to significant reduction in end-to-end runtime---up to \red{a 7.6 minute wall-clock improvement in MNIST, 42 second improvement in Fashion MNIST, 1.2 minute improvement in music features, and 8 minute improvement in IMDB compared to PAA. 
+These runtime effects will only be amplified as the index-query ratio decreases, to be more typical of the repeated-query setting. 
 For instance, when we decrease the ratio to 1:5 on the music features dataset, DROP provides a 6.1 and 4.5 minute improvement compared to PAA and FFT, respectively. 
 }
 
 \red{
 \subsubsection*{Downstream Workload}
-To demonstrate the generalizability of both DROP's pipeline as well as black-box runtime cost-model estimation routines, we extend our pipeline to perform a k-means task over the MNIST digits dataset. 
-We fit a new downstream workload runtime model as we did with k-NN, and operate under a 1:1 index-query ratio. 
-In this workload, DROP terminates in 1488ms, which is 16.5$\times$ faster than PAA and 6.5$\times$ faster than FFT. 
+To demonstrate the generalizability of  DROP's pipeline as well as black-box runtime cost-model estimation routines, we extend our pipeline to perform a k-means task over the MNIST digits dataset. 
+We fit a downstream workload runtime model as we did with k-NN, and operate under a 1:1 index-query ratio. 
+DROP terminates in 1488ms, which is 16.5$\times$ and 6.5$\times$ faster than PAA and FFT. 
 }
 
 

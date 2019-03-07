@@ -15,9 +15,9 @@ However, there are several avenues to explore for future work, such as sophistic
 
 DROP's efficiency is determined by the dataset's spectrum; MALLAT, with the sharpest drop-off, performs extremely well, and Phoneme, with a near uniform distribution, does not.
 Datasets such as Phoneme perform poorly under the default configuration as we enable cost-based optimization after reaching a feasible point.
-Thus, DROP spends a disproportionate time sampling (Fig.~\ref{fig:phoneme_lesion}). 
-Extending DROP to more efficiently determine if a dataset is amenable to aggressive sampling is an exciting area of future work. 
-For instance, recent theoretical results that use sampling to estimate spectrum, even when the number of samples are small in comparison to the input dimensionality~\cite{estspec}, can be run alongside DROP with minimal alteration.
+Thus, DROP spends a disproportionate time sampling (Fig.~\ref{fig:lesion}c). 
+Extending DROP to determine if a dataset is amenable to aggressive sampling is an exciting area of future work. 
+For instance, recent theoretical results that use sampling to estimate spectrum, even when the number of samples is small in comparison to the input dimensionality~\cite{estspec}, can be run alongside DROP.
 
 %To combat this, we provide an alternate sampling schedule that aggressively increases the sampling rate to quickly reach a $TLB$-achieving state if DROP repeatedly fails to meet the target $TLB$. 
 

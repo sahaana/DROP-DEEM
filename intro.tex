@@ -2,17 +2,17 @@
 \section{Introduction}
 \label{sec:intro}
 
-Continued, rapid growth in high-dimensional data from automated data sources~\cite{plato,macrobase-cidr} poses a scalability challenge for machine learning (ML) pipelines.
+Rapid growth in high-dimensional data from automated data sources~\cite{plato,macrobase-cidr} poses a scalability challenge for machine learning (ML) pipelines.
 Dimensionality reduction (DR) techniques can alleviate this scalability challenge~\cite{keogh-indexing,local-dr,decade,gemini}.
-In exchange for a runtime cost ($R$), DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features, allowing downstream analytics routines to terminate in runtime proportional to $k > n$, while preserving accuracy on downstream tasks (see Figure~\ref{fig:pipeline}).
+In exchange for a runtime cost ($R$), DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features, allowing downstream analytics routines to run in time proportional to $k$, while preserving downstream task accuracy (see Figure~\ref{fig:pipeline}).
 
-Principal Component Analysis (PCA) is often the DR method of choice for practitioners with respect to transformation quality ($k$) for a target accuracy~\cite{jolbook}. However, na\"{i}ve implementations of PCA are data and workload-independent, and scale poorly with dimensionality, resulting in runtimes ($R$) that exceed the downstream runtime benefit of DR via PCA. Accordingly, practitioners often sacrifice quality for end-to-end runtime, and use alternative DR methods~\cite{keogh-study}. 
+Principal Component Analysis (PCA) is often practioners' DR method of choice with respect to transformation quality ($k$) for a target accuracy~\cite{jolbook}. However, na\"{i}ve, task-independent PCA implementations scale poorly with dimension, resulting in runtimes ($R$) that outweigh the downstream runtime benefit of DR. Thus, practitioners may sacrifice quality for end-to-end runtime, and use PCA alternatives~\cite{keogh-study}. 
 
 Sample-based, stochastic PCA algorithms~\cite{shamir,re-new} are a scalable alternative to classical PCA.
-However, the amount of sampling required is highly data-dependent.
-If we sample too many data points, then the runtime overhead of PCA in an end-to-end analytics workload could outweigh the statistical benefits.
-If we fail to sample enough data points, then PCA could fail to deliver a sufficiently high-quality reduction and compromise the runtime and/or accuracy of downstream analytics.
-This raises a critical question: can we develop a data and workload-dependent means of efficiently and accurately determining the sampling rate for stochastic PCA, such that we can obtain PCA's transformation quality while minimizing end-to-end workload runtime?
+However, the amount of sampling required is data-dependent.
+If we sample too many data points, the runtime overhead of PCA could outweigh the transformation quality.
+If sample too few data points, PCA could fail to deliver a sufficiently high-quality reduction and compromise the runtime and/or accuracy of downstream analytics.
+As a result, we ask: can we develop a workload-dependent means of efficiently and accurately determining the sampling rate for stochastic PCA, so we can obtain PCA's transformation quality \emph{and} minimize workload runtime?
 
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/pipeline.pdf}
@@ -21,34 +21,33 @@ This raises a critical question: can we develop a data and workload-dependent me
 \end{figure}
 
 To this end, we develop DROP\footnote{\href{https://github.com/stanford-futuredata/DROP}{https://github.com/stanford-futuredata/DROP}}, a system that performs whole-workload runtime optimization by dynamically identifying the amount of sampling required for stochastic PCA.
-DROP takes a high-dimensional dataset,\footnote{Our primary focus \red{for performance evaluation is a case study on time series similarity search,} given the amount of study in the database community~\cite{keogh-study} and the resurgence of interest in time series analytics systems~\cite{macrobase,macrobase-cidr,trill-signal}. We provide a preliminary generalizability analysis in Section~\ref{sec:experiments}.}  property to preserve (e.g., pairwise Euclidean distance to 5\%), and optional runtime model expressing downstream workload performance as a function of dimensionality (e.g., for k-Nearest Neighbors [k-NN], runtime is linear in dimensionality). 
+DROP takes a high-dimensional dataset,\footnote{Our focus \red{is on time series similarity search,} given the amount of study in the database community~\cite{keogh-study} and resurging interest in time series analytics systems~\cite{macrobase,macrobase-cidr,trill-signal}. We provide preliminary generalizability analyses in \S\ref{sec:experiments}.}  property to preserve (e.g., pairwise Euclidean distance to 5\%), and optional runtime model expressing downstream workload performance as a function of dimensionality (e.g., for k-Nearest Neighbors [k-NN], runtime is linear in dimensionality). 
 DROP returns a low-dimensional transformation for the input using as few samples as needed to minimize the projected overall workload runtime while satisfying quality constraints.
 
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/basic.pdf}
-\caption[]{DROP is a workload-aware DR operator compatible with standard ML pipelines. The challenge DROP solves is when to stop training (``good enough?")}
+\caption[]{DROP is a workload-aware DR operator compatible with standard ML pipelines. DROP solves the challenge of when to stop sampling (``good enough?")}
 \label{fig:basic}
 \end{figure}
 
-%%%%%%
-
-To achieve this functionality, DROP addresses the question of how much to sample the input dataset via data-dependent progressive sampling and online progress estimation at runtime.  
-DROP performs PCA on a small sample to obtain a candidate transformation, then progressively increases the number of samples until termination (see Figure~\ref{fig:basic}). 
-To identify the termination point that minimizes the overall runtime, DROP must overcome three challenges:
+DROP addresses the question of how much to sample the input dataset via data-dependent progressive sampling and online progress estimation at runtime.  
+DROP performs PCA on a small sample to obtain a candidate transformation, then increases the number of samples until termination (see Figure~\ref{fig:basic}). 
+To identify the termination point that minimizes runtime, DROP must overcome three challenges:
 
 First, given the results of PCA on a data sample, DROP must \emph{evaluate the quality} of the current candidate transformation.
 Popular analytics and data mining tasks often require approximate preservation of metrics such as average pairwise distances between data points~\cite{time-series-dm,dm-book}, which are costly to compute.
 Thus, DROP adapts confidence intervals for fast estimation of the input metric to preserve.
 
 
-Second, DROP must \emph{estimate the marginal benefit of sampling additional datapoints} for another iteration.
-When running PCA on a series of progressively larger samples, later samples will incur higher computational cost but may return lower-dimensional transformations. 
-To navigate this trade-off between end-to-end runtime and transformation quality, DROP uses the results obtained from previous iterations to build a predictive performance model for future iterations.
+Second, DROP must \emph{estimate the marginal benefit of sampling additional datapoints}.
+When running PCA on a series of larger samples, later samples will increase $R$, but may return lower $k$ (lower downstream runtime). 
+To navigate this trade-off between end-to-end runtime and transformation quality, DROP uses the results obtained from previous iterations to build a  performance model for future iterations.
 
 
-Finally, given the current quality and expected marginal benefit of the next iteration, DROP must \emph{optimize end-to-end runtime}.
-While an application-agnostic approach would iterate until successive iterations yield no benefit to quality, many analytics operators such as k-Nearest Neighbors are tolerant of error~\cite{gemini}, so it is frequently advantageous to trade a slightly higher-dimensional basis for faster pre-processing (DR).
-To address this challenge, the system performs workload-specific optimization to minimize the expected runtime of the complete end-to-end analytics pipeline.
+Finally, given the expected marginal benefit of the next iteration, DROP must \emph{optimize end-to-end runtime}.
+While an application-agnostic approach would iterate until successive iterations yield no quality benefit, a user-provided cost model may reveal that trading a higher $k$ for a lower $R$ may decrease end-to-end runtime.
+DROP therefore evaluates this cost at each iteration
+to minimize the expected workload runtime.
 
 
 \begin{comment}
@@ -81,11 +80,11 @@ However, as we have hinted, many time-series analytics operators such as k-Neare
 To address this challenge, DROP performs a workload-specific optimization, utilizing a provided (or profiled) application-specific runtime model and performs online optimization  to minimize the expected runtime of the complete end-to-end analytics pipeline.
 \end{comment} 
 
-We view DROP as a pragmatic combination of recent theoretical advances in dimensionality reduction and classic techniques from approximate query processing, and a useful system for performing end-to-end workflow optimization.
-We make the following contributions in this work:
+DROP is a combination of recent theoretical advances in DR and classic techniques from approximate query processing, and useful system for end-to-end workflow optimization.
+In this work, we make the following contributions:
 \begin{itemize}
 
-\item We show the data sample required to perform accuracy-achieving PCA is often small (as little as $1\%$), and data-dependent sampling can enable \red{$91\times$} speedup compared to PCA via singular value decomposition (SVD). 
+\item We show the data sample required to perform accuracy-achieving PCA is often small (as little as $1\%$), and sampling can enable up to \red{$91\times$} speedup over baseline PCA. 
 %We show that as little as $2\%$ of time series data suffices to preserve pairwise distances within $2\%$, providing a $55.6\times$ reduction in dimension.
   %this came from the oracle numbers--used 0.002 and then looked at table
   
