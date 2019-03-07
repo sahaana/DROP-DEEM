@@ -6,13 +6,15 @@ Rapid growth in high-dimensional data from automated data sources~\cite{plato,ma
 Dimensionality reduction (DR) techniques can alleviate this scalability challenge~\cite{keogh-indexing,local-dr,decade,gemini}.
 In exchange for a runtime cost ($R$), DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features, allowing downstream analytics routines to run in time proportional to $k$, while preserving downstream task accuracy (see Figure~\ref{fig:pipeline}).
 
-Principal Component Analysis (PCA) is often practioners' DR method of choice with respect to transformation quality ($k$) for a target accuracy~\cite{jolbook}. However, na\"{i}ve, task-independent PCA implementations scale poorly with dimension, resulting in runtimes ($R$) that outweigh the downstream runtime benefit of DR. Thus, practitioners may sacrifice quality for end-to-end runtime, and use PCA alternatives~\cite{keogh-study}. 
+Principal Component Analysis (PCA) is often practioners' DR method of choice with respect to transformation quality ($k$) for a target accuracy~\cite{jolbook}. 
+However, na\"{i}ve, task-independent PCA implementations scale poorly with dimension, resulting in runtimes ($R$) that outweigh the downstream runtime benefit of DR. 
+Thus, practitioners may sacrifice quality for end-to-end runtime, and use PCA alternatives~\cite{keogh-study}. 
 
 Sample-based, stochastic PCA algorithms~\cite{shamir,re-new} are a scalable alternative to classical PCA.
 However, the amount of sampling required is data-dependent.
-If we sample too many data points, the runtime overhead of PCA could outweigh the transformation quality.
-If sample too few data points, PCA could fail to deliver a sufficiently high-quality reduction and compromise the runtime and/or accuracy of downstream analytics.
-As a result, we ask: can we develop a workload-dependent means of efficiently and accurately determining the sampling rate for stochastic PCA, so we can obtain PCA's transformation quality \emph{and} minimize workload runtime?
+If we sample too many data points, PCA's runtime overhead would still outweigh its transformation quality.
+If we sample too few data points, PCA may fail to deliver a sufficiently high-quality reduction and compromise the runtime and/or accuracy of downstream tasks.
+Thus, we ask: can we develop a workload-dependent way to efficiently and accurately determine the sampling rate for stochastic PCA, so we can obtain PCA's transformation quality \emph{and} minimize workload runtime?
 
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/pipeline.pdf}
