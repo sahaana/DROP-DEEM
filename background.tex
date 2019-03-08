@@ -1,19 +1,20 @@
 \section{Background and Problem}
 \label{sec:background}
 
-We  provide background on dimensionality reduction (DR), and define our problem of workload-aware DR. 
+We provide background on dimensionality reduction (DR), define our problem of workload-aware DR, and show how progressive sampling provides a way to tackle this problem. 
 
 \subsection{Dimensionality Reduction}
 \label{sec:defs}
 
-DR refers to finding a low-dimensional representation of a dataset that preserves properties of interest, such as data point similarity~\cite{dr-survey1,dr-survey2}. Formally, consider a data matrix $X \in \mathbb{R}^{\mvar \times \dvar}$, where each row $i$ corresponds to data point $x_i \in \mathbb{R}^\dvar$, with $\mvar > \dvar$.  
-DR computes a transformation function ($T: \mathbb{R}^\dvar \rightarrow \mathbb{R}^k$) that maps each $x_i$ to a new basis as $\tilde{x}_i \in \mathbb{R}^k$ where $k \leq \dvar$, resulting in a new data matrix $T(X) = \tilde{X} \in \mathbb{R}^{\mvar \times k}$.
+The goal of DR is to find a low-dimensional representation of a dataset that preserves properties of interest, such as data point similarity~\cite{dr-survey1,dr-survey2}. Formally, consider a data matrix $X \in \mathbb{R}^{\mvar \times \dvar}$, where each row $i$ corresponds to data point $x_i \in \mathbb{R}^\dvar$, with $\mvar > \dvar$.  
+DR computes a transformation function $T: \mathbb{R}^\dvar \rightarrow \mathbb{R}^k$ that maps each $x_i$ to a more compact representation, resulting in a new data matrix $T(X) = \tilde{X} \in \mathbb{R}^{\mvar \times k}$.
 
 \subsubsection*{Principal Component Analysis (PCA)}
 \label{sec:pca}
 PCA is a linear DR technique that identifies a new orthogonal basis for a dataset that captures its directions of highest variance.
 Of all linear transformations, this basis minimizes reconstruction error in a mean square sense. 
 Classically implemented PCA uses a Singular Value Decomposition (SVD) routine~\cite{trefethen}.
+
 
 \begin{comment} 
 \begin{algorithm}
@@ -69,14 +70,26 @@ DR with a multidimensional index structure in the reduced space is a classic way
 
 
 \subsubsection*{\red{DR in Similarity Search}}
-\red{Similarity search is a repeated-query workload performed over data types including images, documents and time series~\cite{keogh-study,lsh}.
-We use similarity search as a running case study given its popularity and the large amount of research in the space.
+Similarity search is a repeated-query workload performed over data types including images, documents and time series~\cite{keogh-study,lsh}.
 The Tightness of Lower Bounds ($TLB$) is typically the metric preserved by DR in this setting~\cite{keogh-study}, as it measures how well a \emph{contractive} transformation (i.e. distances in the transformed space are less than or equal to those in the original) preserves pairwise distances. 
-It can estimate the accuracy of a low dimensional transformation without performing the similarity search task:}
+It can estimate the accuracy of a low dimensional transformation without performing the similarity search task:
 \begin{equation}
 \label{eq:tlb}
 TLB = \frac{2}{\mvar(\mvar-1)}\sum_{i<j}\frac{\| \tilde{x}_i -  \tilde{x}_j \|_2 }{\| x_i -  x_j\|_2 }.
 \end{equation}
+
+Given its popularity and large amount of research in the space, we use time series similarity search as a running case study. 
+We briefly revisit a comparison of DR techniques for time series similarity search from VLDB 2008~\cite{keogh-study} to verify that PCA can outperform conventionally used techniques (low $k$), but with a high DR runtime cost.
+The authors omit PCA due to it being ``untenable for large data sets." 
+
+We compare PCA via SVD to baseline techniques based on runtime and DR performance with respect to $TLB$ over the largest datasets from~\cite{keogh-study}. 
+We use their two fastest methods as our baselines as they show the remainder exhibited ``very little difference'': Fast Fourier Transform (FFT) and Piecewise Aggregate Approximation (PAA).
+On average, PCA provides bases that are $2.3\times$ (up to $3.9\times$) and $3.7\times$ (up to $26\times$)  smaller than PAA and FFT for $TLB = 0.75$, and $2.9\times$ (up to $8.3\times$) and $1.8\times$ (up to $5.1\times$) smaller for $TLB = 0.99$.
+However, PCA implemented via out-of-the-box SVD is on average over \red{$26\times$ (up to $56\times$)} slower than PAA and over \red{$4.6\times$ (up to $9.7\times$)} times slower than FFT when computing the smallest $TLB$-preserving basis.
+While the margin between PCA and alternatives is dataset-dependent, PCA almost always preserves $TLB$ with a lower dimensional representation at a higher runtime cost.
+This runtime-quality tradeoff motivates our study of workload-aware DR methods. 
+
+
 
 
 \subsection{Problem: Workload-Aware DR}
@@ -85,7 +98,7 @@ TLB = \frac{2}{\mvar(\mvar-1)}\sum_{i<j}\frac{\| \tilde{x}_i -  \tilde{x}_j \|_2
 In workload-aware DR, we perform DR to minimize whole workload runtime subject to downstream accuracy constraints.
 DR is a fixed cost (i.e., index construction for similarity search), while each query incurs a marginal cost that is dependent on DR quality (i.e., nearest neighbor query); lower-dimensional data points result in faster queries. 
 
-As input, consider an input dataset ($X$), target metric preservation ($B$; e.g., $TLB \geq .99$), and optional downstream runtime as a function of dimensionality ($\mathcal{C}_\mvar(\dvar)$ for an $\mvar\times \dvar$ matrix).  
+As input, consider a dataset $X$, target metric preservation $B$(e.g., $TLB \geq .99$), and optional downstream runtime as a function of dimensionality $\mathcal{C}_\mvar(\dvar)$ for an $\mvar\times \dvar$ matrix.  
 Denoting DR runtime as $R$, we define the problem:
 \begin{problem}
 \label{def:opt}
@@ -97,7 +110,36 @@ Denoting DR runtime as $R$, we define the problem:
 
 We assume the downstream runtime model $\mathcal{C}_\mvar(\dvar)$ is monotonically increasing in $\dvar$.
 %as the premise of DR for efficient analytics relies on downstream tasks running faster on lower dimensional data.
-Absent the cost model, we default to execution until convergence (i.e, until $k$ plateaus) as described in \S\ref{sec:sampling}, and demonstrate the cost of doing so in \S\ref{sec:experiments}.
-
-The more time spent on DR ($R$), the smaller the transformation ($k$), thus the lower the workload runtime.
+%Absent the cost model, we default to execution until convergence (i.e, until $k$ plateaus) as described in \S\ref{sec:sampling}, and demonstrate the cost of doing so in \S\ref{sec:experiments}.
+As seen in the case study, the more time spent on DR ($R$), the smaller the transformation ($k$), thus the lower the workload runtime.
 To minimize $R + \mathcal{C}_\mvar(k)$, we must determine how much time to spend on DR to minimize end-to-end runtime.
+
+\subsection{Solution Sketch: Progressive Sampling}
+\label{sec:sampling}
+
+
+To tackle workload-aware DR, we turn to data sampling. 
+Many real-world \red{datasets} are intrinsically low-dimensional, as evidenced by their rapid falloff in their eigenvalues.
+A data sample thus captures much of the dataset's ``interesting'' behavior, so fitting models over data samples generalizes well. 
+To verify, we vary the target $TLB$ and examine the minimum number of uniformly selected samples required to obtain a $TLB$-preserving transform with output dimension $k$ equal to input dimension $\dvar$.
+On average, a sample of under $0.64\%$ $(\text{up to } 5.5\%)$ of the input is sufficient for $TLB = 0.75$, and under $4.2\%$ $(\text{up to } 38.6\%)$ is sufficient for $TLB=0.99$.  
+If this sample rate is known, we obtain up to \red{$91\times$ speedup} compared to a na\"ive implementation of PCA via SVD---with no algorithmic improvement. 
+
+\begin{figure}
+\includegraphics[width=\linewidth]{figs/progressive.pdf}
+\caption[]{ Improvement in representation size for  $TLB = 0.80$ across three datasets. Higher sampling rates improve quality until reaching a state equivalent to running PCA over the full dataset ("convergence")}
+\label{fig:progressive}
+\end{figure}
+
+However, this benefit is dataset-dependent, and unknown a priori.
+We thus turn to progressive sampling (gradually increasing the sample size) to identify how large a sample suffices.
+Figure~\ref{fig:progressive} shows how the dimensionality required to attain a given $TLB$ changes when we vary dataset and proportion of data sampled.
+Increasing the number of samples (which increases PCA runtime) provides lower dimensional transformations for the same quality.
+However, this decrease in dimension plateaus as the number of samples increases.
+Thus, while progressive sampling would allow us to tune the amount of time spent on DR, we must determine when the downstream value of decreased dimension is overpowered by the cost of additional DR---that is, whether to sample to convergence or terminate early (e.g., at $0.3$ proportion of data sampled for SmallKitchenAppliances). 
+
+
+
+
+
+

@@ -1,8 +1,8 @@
 \section{DROP: Workload Optimization}
 \label{sec:algo}
 
-%We now introduce DROP, a system that performs progressive sampling and online progress estimation to control the amount of sampling to minimize overall runtime. 
-DROP answers a crucial question that stochastic PCA techniques have traditionally ignored: how long should these methods run? 
+We now introduce DROP, a system that performs progressive sampling and online progress estimation to control the amount of sampling to minimize overall runtime. 
+%DROP answers a crucial question that stochastic PCA techniques have traditionally ignored: how long should these methods run? 
 
 \begin{comment}
 Notation used is in Table~\ref{table:inputs}.
@@ -82,13 +82,8 @@ We consider a simple uniform sampling strategy: each iteration, DROP samples a f
 \begin{algorithm}[t!]
 \begin{algorithmic}[1]
 \small
-\Statex \textbf{Input:}  
-\Statex $X$: data matrix
-\Statex $B$: target metric preservation level
-\Statex $\mathcal{C}_\mvar$: cost of downstream operations; default tuned to k-NN
-\Statex
-\Statex \textbf{Output:}   
-\Statex $T_k$: $k$-dimensional transformation matrix
+\Statex \textbf{Input:}  $X$: data; $B$: target metric preservation level; $\mathcal{C}_\mvar$: cost of downstream operations; default tuned to k-NN
+\Statex \textbf{Output:} $T_k$: $k$-dimensional transformation matrix
 \Statex
 \Statex \hrule
 \Function{drop}{$X,  B, \mathcal{C}_\mvar$}:
@@ -136,13 +131,13 @@ Thus, DROP uses the $TLB$ constraint and two properties of PCA to automatically 
 %Instead, DROP exploits two key properties of PCA to avoid this.
 
 First, PCA via SVD produces an orthogonal linear transformation where the principal components  are returned in order of decreasing dataset variance explained.
-Once DROP has computed the transformation matrix for dimension $\dvar$, DROP obtains the transformations for all dimensions $k$ less than $\dvar$ truncating the matrix to $\dvar \times k$, as .
+Once DROP has computed the transformation matrix for dimension $\dvar$, DROP obtains the transformations for all dimensions $k$ less than $\dvar$ truncating the matrix to $\dvar \times k$ .
 %PCA via SVD produces an orthogonal linear transformation where the first principal component explains the most variance in the dataset, the second explains the second most---subject to being orthogonal to the first---and so on.  
 
 Second, with respect to $TLB$ preservation, the more principal components that are retained, the better the lower-dimensional representation in terms of $TLB$.  
 This is because orthogonal transformations such as PCA preserve inner products. 
 Therefore, a $\dvar$-dimensional PCA perfectly preserves $\mathcal{L}_2$-distance between data points. 
-As the $\mathcal{L}_2$-distance is a sum of squared (positive) terms, the more principal components that are retained, the better the representation preserves $\mathcal{L}_2$-distance.
+As $\mathcal{L}_2$-distance is a sum of squared (positive) terms, the more principal components retained, the better the representation preserves $\mathcal{L}_2$-distance.
 
 Using the first property, DROP obtains all low-dimensional transformations for the sample from the $\dvar$-dimensional basis.  
 Using the second property, DROP runs binary search over these transformations to return the lowest-dimensional basis that attains $B$ (i.e., \textsc{compute-transform}, line~\ref{eq:basis} of Algorithm~\ref{alg:candidate}).

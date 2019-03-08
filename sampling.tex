@@ -1,9 +1,7 @@
-\section{Similarity Search Case Study}
+\section{Sample-Based PCA}
 \label{sec:sampling}
 
-To tackle workload-aware DR, we first perform a case study on time series similarity search by revisiting a comparison of DR techniques from VLDB 2008~\cite{keogh-study}. 
-We show that PCA can outperform classic techniques (low $k$), but at a high cost ($R$).
-We then demonstrate how sample-based PCA can bridge this gap, but that the number of samples required varies per dataset.
+To tackle workload-aware DR, we demonstrate how sample-based PCA can bridge the performance , but that the number of samples required varies per dataset.
 Finally, we show how dynamically increasing the sampling rate can help identify how much to sample a given dataset, providing a foundation for workload-aware DR.
 
 \begin{figure}
@@ -12,6 +10,7 @@ Finally, we show how dynamically increasing the sampling rate can help identify 
 \label{fig:progressive}
 \end{figure}
 
+\begin{comment}
 \subsection{PCA Speed vs. Quality}
 
 While improved quality provides faster repeated query execution, the cost of DR via PCA dominates this speedup, encouraging the use of faster, lower-quality alternatives~\cite{keogh-study}. 
@@ -32,6 +31,7 @@ While the margin between PCA and alternatives is dataset-dependent, PCA almost a
 PCA implemented via out-of-the-box SVD is on average over \red{$26\times$ (up to $56\times$)} slower than PAA and over \red{$4.6\times$ (up to $9.7\times$)} times slower than FFT when computing the smallest $TLB$-preserving basis.
 %This substantiates the observation that classic PCA is incredibly slow compared to alternatives~\cite{keogh-study}. 
 
+\end{comment}
 
 \subsection{Incremental, Progressive Sampling}
 To bridge this performance-runtime gap, we turn to data sampling. 

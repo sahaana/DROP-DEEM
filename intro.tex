@@ -7,10 +7,10 @@ Dimensionality reduction (DR) techniques can alleviate this scalability challeng
 In exchange for a runtime cost ($R$), DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features, allowing downstream analytics routines to run in time proportional to $k$, while preserving downstream task accuracy (see Figure~\ref{fig:pipeline}).
 
 Principal Component Analysis (PCA) is often practioners' DR method of choice with respect to transformation quality ($k$) for a target accuracy~\cite{jolbook}. 
-However, na\"{i}ve, task-independent PCA implementations scale poorly with dimension, resulting in runtimes ($R$) that outweigh the downstream runtime benefit of DR. 
+However, na\"{i}ve, task-independent PCA implementations scale poorly, resulting in runtimes ($R$) that outweigh the downstream runtime benefit of DR. 
 Thus, practitioners may sacrifice quality for end-to-end runtime, and use PCA alternatives~\cite{keogh-study}. 
 
-Sample-based, stochastic PCA algorithms~\cite{shamir,re-new} are a scalable alternative to classical PCA.
+Sample-based stochastic PCA algorithms~\cite{shamir,re-new} are a scalable alternative to classical PCA.
 However, the amount of sampling required is data-dependent.
 If we sample too many data points, PCA's runtime overhead would still outweigh its transformation quality.
 If we sample too few data points, PCA may fail to deliver a sufficiently high-quality reduction and compromise the runtime and/or accuracy of downstream tasks.
@@ -22,8 +22,11 @@ Thus, we ask: can we develop a workload-dependent way to efficiently and accurat
 \label{fig:pipeline}
 \end{figure}
 
-To this end, we develop DROP\footnote{\href{https://github.com/stanford-futuredata/DROP}{https://github.com/stanford-futuredata/DROP}}, a system that performs whole-workload runtime optimization by dynamically identifying the amount of sampling required for stochastic PCA.
-DROP takes a high-dimensional dataset,\footnote{Our focus \red{is on time series similarity search,} given the amount of study in the database community~\cite{keogh-study} and resurging interest in time series analytics systems~\cite{macrobase,macrobase-cidr,trill-signal}. We provide preliminary generalizability analyses in \S\ref{sec:experiments}.}  property to preserve (e.g., pairwise Euclidean distance to 5\%), and optional runtime model expressing downstream workload performance as a function of dimensionality (e.g., for k-Nearest Neighbors [k-NN], runtime is linear in dimensionality). 
+To this end, we develop DROP\footnote{\href{https://github.com/stanford-futuredata/DROP}{https://github.com/stanford-futuredata/DROP}}, a system that dynamically identifies the amount of sampling required for stochastic PCA by using downstream task information.
+DROP takes as input a high-dimensional dataset,
+%\footnote{Our focus \red{is on time series similarity search,} given the amount of study in the database community~\cite{keogh-study} and resurging interest in time series analytics systems~\cite{macrobase,macrobase-cidr,trill-signal}. 
+%We provide preliminary generalizability analyses in \S\ref{sec:experiments}.}  
+property to preserve (e.g., pairwise Euclidean distance to 5\%), and optional runtime model expressing downstream workload performance as a function of dimensionality (e.g., for k-Nearest Neighbors [k-NN], runtime is linear in dimensionality). 
 DROP returns a low-dimensional transformation for the input using as few samples as needed to minimize the projected overall workload runtime while satisfying quality constraints.
 
 \begin{figure}

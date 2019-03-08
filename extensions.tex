@@ -1,5 +1,5 @@
 %\red{
-\section{Future Work and Conclusions}
+\section{Future Work}
 \label{subsec:disc}
 
 %\subsection{Generalization}
@@ -10,7 +10,6 @@
 DROP provides a first step in bridging the gap between quality and efficiency in DR for downstream \red{analytics}.
 However, there are several avenues to explore for future work, such as sophisticated sampling methods and streaming execution.
 
-\subsection{Data-Aware Sampling}
 %We demonstrated that workload-aware approximate PCA can provide large end-to-end speedups in \red{our time series case study} and for non-time series datasets with low intrinsic dimensionality.
 
 DROP's efficiency is determined by the dataset's spectrum; MALLAT, with the sharpest drop-off, performs extremely well, and Phoneme, with a near uniform distribution, does not.
@@ -30,10 +29,6 @@ For instance, recent theoretical results that use sampling to estimate spectrum,
 %\label{fig:spectrum}
 %\end{figure}
 
-
-\red{
-\subsection{Streaming Execution}
-\label{subsec:streaming}
 %DROP can be extended to repeated-query scenarios that occur in a streaming context, where users wish to query incoming data against historical data.
 %For instance, time series for similarity search are often generated as via systems that continuously monitor and obtain data from processes over a large span of time.
 %Users wish to process this data as it arrives to identify anomalous or interesting behavior.
@@ -45,7 +40,6 @@ First, DROP can use of the wide body of work in changepoint or feature drift det
 Alternatively, DROP can maintain a reservoir sample of incoming data~\cite{reservoir}, tuned to the specific application, and retrain if the metric of interest no longer satisfies user-specified constraints. 
 Due to DROP's default termination condition, cost-based optimization must be disabled until the metric constraint is achieved to prevent early termination.
 
-}
 
 
 
