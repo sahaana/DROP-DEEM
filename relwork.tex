@@ -5,12 +5,11 @@
 \minihead{Dimensionality Reduction} DR is a well-studied operation~\cite{dr-survey1,dr-survey2,nonlinear-dr} in the
 database~\cite{keogh-indexing,local-dr,charu-ss}, data
 mining~\cite{sax,paa}, statistics and machine
-learning~\cite{alecton,shamir}, and theoretical CS~\cite{bernstein,pca-stoc} communities.
-In this paper, our focus is PCA.
-
-Stochastic PCA methods are \emph{theoretically efficient} as they iterate over data samples~\cite{re-new, shamir}.
+learning~\cite{alecton,shamir,bernstein,pca-stoc} communities.
+In this paper, our focus is on PCA.
+While classic PCA via SVD is inefficient, stochastic PCA methods provide a scalable alternative as they iterate over data samples~\cite{re-new, shamir}.
 However, they either $i)$ execute for a pre-specified number of iterations or $ii)$ execute until convergence.
-In case $i$, the number of iterations required to compute a basis over a given dataset is highly data-dependent and difficult to specify a priori.
+In case $i$, the number of iterations required for a given dataset is highly data-dependent and difficult to specify a priori.
 In case $ii$, running to convergence may not be required, and thus can incur unnecessary overhead.
 Thus, to our knowledge, existing termination conditions are not suitable when considering willingness to trade quality for whole workload runtime.
 

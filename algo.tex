@@ -33,44 +33,35 @@ $i $ & Current DROP iteration        & $\mathbb{Z}_+$  \tabularnewline
 \end{table}
 \end{comment}
 
-\begin{figure*}
-\label{fig:arch}
-\begin{center}
-\includegraphics[width=\textwidth]{figs/system_arch.pdf}\vspace{-1em}
-\caption[]{High-level DROP architecture depicting DROP's inputs, outputs, and core components.}
-\end{center}
-\vspace{-1em}
-\end{figure*}
-
 
 \subsection{DROP Architecture}
 \label{subsec:arch}
 %DROP is a system that performs workload-aware dimensionality reduction, optimizing the combined runtime of downstream tasks and DR as defined in Problem~\ref{def:opt}.
-DROP operates over a series of data samples, and determines when to terminate via \red{a} four-step procedure that is repeated for each iteration: %progressive sampling, transformation evaluation, progress estimation, and cost-based optimization:
+DROP operates over a series of data samples, and determines when to terminate via \red{a} four-step procedure at each iteration: %progressive sampling, transformation evaluation, progress estimation, and cost-based optimization:
 
 %To power this pipeline, DROP combines database and machine learning techniques spanning online aggregation (\S\ref{subsec:teval}), progress estimation (\S\ref{subsec:pest}), progressive sampling (\S\ref{subsec:psample}), and PCA approximation (\S\S\ref{subsec:pcaroutine},\ref{subsec:reuse}).
 
 %We now provide a brief overview of DROP's sample-based iterative architecture before detailing each.
 
-\minihead{Step 1: Progressive Sampling (\S\ref{subsec:psample}, Alg~\ref{alg:DROP} L\ref{eq:sample}, Fig 2A)}
+\minihead{Step 1: Progressive Sampling (\S\ref{subsec:psample}, Alg~\ref{alg:DROP} L\ref{eq:sample}, Fig 4A)}
 
 \noindent DROP draws a data sample, performs PCA over it, and uses of a novel reuse mechanism across iterations (\S\ref{subsec:reuse}).
 
-\minihead{Step 2: Transform Evaluation (\S\ref{subsec:teval}, Alg~\ref{alg:DROP} L\ref{eq:evaluate}, Fig 2B)} 
+\minihead{Step 2: Transform Evaluation (\S\ref{subsec:teval}, Alg~\ref{alg:DROP} L\ref{eq:evaluate}, Fig 4B)} 
 
 \noindent DROP then evaluates the quality of the above by identifying the size of the smallest metric-preserving transformation that can be extracted. 
 
-\minihead{Step 3: Progress Estimation (\S\ref{subsec:pest}, Alg~\ref{alg:DROP} L\ref{eq:estimate}, Fig 2C)} 
+\minihead{Step 3: Progress Estimation (\S\ref{subsec:pest}, Alg~\ref{alg:DROP} L\ref{eq:estimate}, Fig 4C)} 
 
 \noindent Given the size of the metric-preserving transform and the time required to obtain this transform, DROP estimates the size and computation time of continued iteration.
 
-\minihead{Step 4: Cost-Based Optimization (\S\ref{subsec:opt}, Alg~\ref{alg:DROP} L\ref{eq:optimize}, Fig 2D)} 
+\minihead{Step 4: Cost-Based Optimization (\S\ref{subsec:opt}, Alg~\ref{alg:DROP} L\ref{eq:optimize}, Fig 4D)} 
 
 \noindent DROP optimizes over DR and downstream task runtime to determine if it should terminate.
 
 \subsection{Progressive Sampling}
 \label{subsec:psample}
-DROP repeatedly chooses a subset of data and computes PCA on the subsample (via one of the methods in \S~\ref{subsec:pcaroutine}).
+DROP repeatedly chooses a subset of data and computes a $\dvar$-dimensional transformation via PCA on the subsample via one of the methods in \S~\ref{subsec:pcaroutine}.
 We consider a simple uniform sampling strategy: each iteration, DROP samples a fixed percentage of the data.
 %Exploring data-dependent and weighted sampling schemes that are dependent on the current basis is an exciting area for future work. 
 %While we considered a range of alternative sampling strategies, uniform sampling strikes a balance between computational and statistical efficiency. 
@@ -82,7 +73,7 @@ We consider a simple uniform sampling strategy: each iteration, DROP samples a f
 \begin{algorithm}[t!]
 \begin{algorithmic}[1]
 \small
-\Statex \textbf{Input:}  $X$: data; $B$: target metric preservation level; $\mathcal{C}_\mvar$: cost of downstream operations; default tuned to k-NN
+\Statex \textbf{Input:}  $X$: data; $B$: target metric preservation level; $\mathcal{C}_\mvar$: cost of downstream operations
 \Statex \textbf{Output:} $T_k$: $k$-dimensional transformation matrix
 \Statex
 \Statex \hrule
@@ -112,21 +103,19 @@ We consider a simple uniform sampling strategy: each iteration, DROP samples a f
 
 \subsection{Evaluating Transformations}
 \label{subsec:teval}
-Given a transformation obtained by running PCA over a sample, DROP must accurately and efficiently evaluate the performance of this transformation with respect to a metric of interest \red{over the entire dataset, not just the data sample}. 
+DROP must accurately and efficiently evaluate this iteration's performance with respect to a metric of interest \red{over the entire dataset}. 
 %To do so, DROP adapts an approach for deterministic queries in online aggregation: treating quality metrics as aggregation functions and using confidence intervals for fast estimation. 
 %We first discuss this approach in the context of $TLB$, then discuss how to extend this approach to alternative metrics at the end of this section.
-
-We define the performance of a transformation computed over a sample as the size of the lowest dimensional $TLB$-preserving transform ($k$) that can be extracted.
-There are two challenges in evaluating this performance.
-First, the $k$ that achieves the $TLB$ constraint is rarely known a priori. 
-Second, brute-force $TLB$ computation would dominate the runtime of computing PCA over a sample.
+We define this iteration's performance as the size of the lowest dimensional $TLB$-preserving transform ($k_i$) that it can return. 
+There are two challenges in performance evaluation.
+First, the lowest $TLB$-achieving $k_i$ is unknown a priori. 
+Second, brute-force $TLB$ computation would dominate the runtime of computing PCA over a sample. 
+We now describe how to solve these challenges.
 
 \subsubsection{Computing the Lowest Dimensional Transformation}
 
-DROP first computes a full, $\dvar$-dimensional basis via PCA over the data sample.
-To reduce dimensionality, DROP must determine if a smaller dimensional $TLB$-preserving transformation can be computed over this sample, and return the smallest such transform. 
-Ideally, the smallest $k$ would be known a priori, but in practice, this is not true.   
-Thus, DROP uses the $TLB$ constraint and two properties of PCA to automatically identify the size of the returned transformation.
+Given the $\dvar$-dimensional transformation from step 1, to reduce dimensionality, DROP must determine if a smaller dimensional $TLB$-preserving transformation can be obtained and return the smallest such transform. 
+Ideally, the smallest $k$ would be known a priori, but in practice, this is not true---thus, DROP uses the $TLB$ constraint and two properties of PCA to automatically identify it.
 %A na\"ive strategy would evaluate the $TLB$ for every combination of the $\dvar$ basis vectors for every transformation size, requiring $O(2^\dvar)$ evaluations. 
 %Instead, DROP exploits two key properties of PCA to avoid this.
 
@@ -140,33 +129,33 @@ Therefore, a $\dvar$-dimensional PCA perfectly preserves $\mathcal{L}_2$-distanc
 As $\mathcal{L}_2$-distance is a sum of squared (positive) terms, the more principal components retained, the better the representation preserves $\mathcal{L}_2$-distance.
 
 Using the first property, DROP obtains all low-dimensional transformations for the sample from the $\dvar$-dimensional basis.  
-Using the second property, DROP runs binary search over these transformations to return the lowest-dimensional basis that attains $B$ (i.e., \textsc{compute-transform}, line~\ref{eq:basis} of Algorithm~\ref{alg:candidate}).
-If a target $B$ cannot be realized with this sample, DROP omits all further optimization steps in this iteration and continues the next iteration by drawing a larger sample.
+Using the second property, DROP runs binary search over these transformations to return the lowest-dimensional basis that attains $B$ (Algorithm~\ref{alg:candidate} line~\ref{eq:basis}).
+If $B$ cannot be realized with this sample, DROP omits further optimization steps and continues the next iteration by drawing a larger sample.
 
 Computing the full $\dvar$-dimensional basis at every step may be wasteful. 
 Thus, if DROP has previously found a candidate $TLB$-preserving basis of size $\dvar' < \dvar$ in prior iterations, then DROP only computes $\dvar'$ components at the start of the next iteration.
-This allows for more efficient PCA computation for future iterations, as advanced PCA routines can exploit the $\dvar'$-th eigengap to converge faster (\S\ref{sec:relatedwork}).
+This allows for more efficient PCA computation for future iterations, as advanced PCA routines can exploit the $\dvar'$-th eigengap to converge faster. (\S\ref{sec:relatedwork}).
 % \red{This is because similar to a hold-out or validation set, $TLB$ evaluation is representative of the entire dataset, not just the current sample (see Alg.~\ref{alg:candidate} L5). 
 %Thus, sampling additional training datapoints enables DROP to better learn global data structure and perform at least as well as over a smaller sample.}
 
 
 % stop here!
 
-\subsubsection{$TLB$ Computation}
+\subsubsection{Efficient $TLB$ Computation}
 
-Given a transformation, DROP must efficiently determine if the basis preserves the desired $TLB$.
+Given a transformation, DROP must determine if it preserves the desired $TLB$.
 Computing pairwise $TLB$ for all data points requires $O(\mvar^2\dvar)$ time, which dominates the runtime of computing PCA on a sample.
-However, as the $TLB$ is an average of random variables bounded from 0 to 1, DROP can use statistical sampling and confidence intervals to compute the $TLB$ to arbitrary confidences.
+However, as the $TLB$ is an average of random variables bounded from 0 to 1, DROP can use sampling and confidence intervals to compute the $TLB$ to arbitrary confidences.
 
-Given a transformation, DROP iteratively refines an estimate of its $TLB$ (function \textsc{evaluate-tlb} in Algorithm~\ref{alg:candidate}, line~\ref{eq:eval}) by \red{incrementally sampling an increasing number of} pairs from the input data (Algorithm~\ref{alg:candidate}, line~\ref{eq:paircheck}), transforming each pair into the new basis, then measuring the distortion of $\mathcal{L}_2$ distance between the pairs, providing a $TLB$ estimate to confidence level $c$ (Algorithm~\ref{alg:candidate}, line~\ref{eq:tlbeval}). 
+Given a transformation, DROP iteratively refines an estimate of its $TLB$ (Alg.~\ref{alg:candidate}, l~\ref{eq:eval}) by \red{incrementally sampling an increasing number of} pairs from the input data (Alg.~\ref{alg:candidate}, l\ref{eq:paircheck}), transforming each pair into the new basis, then measuring the distortion of $\mathcal{L}_2$-distance between the pairs, providing a $TLB$ estimate to confidence level $c$ (Alg.~\ref{alg:candidate}, l\ref{eq:tlbeval}). 
 If the confidence interval's lower bound is greater than the target $TLB$, the basis is a sufficiently good fit; if its the upper bound is less than the target $TLB$, the basis is not a sufficiently good fit. 
 If the confidence interval contains the target $TLB$,  \red{ DROP cannot determine if the target $TLB$ is achieved. 
 Thus, DROP automatically samples additional pairs to refine its estimate.
 %in practice, and especially for our initial target time series datasets, DROP rarely uses more than 500 pairs on average in its $TLB$ estimates (often using far fewer)
 }
 
-To estimate the $TLB$ to confidence $c$, DROP uses the Central Limit Theorem (similar to online aggregation~\cite{onlineagg}): computing the standard deviation of a set of sampled pairs' $TLB$ measures and applying a confidence interval to the sample according to the $c$.
-For data with low variance, DROP evaluates a candidate basis with few samples from the dataset \red{as the confidence intervals shrink rapidly}. 
+To estimate the $TLB$ to confidence $c$, DROP uses the Central Limit Theorem: computing the standard deviation of a set of sampled pairs' $TLB$ measures and applying a confidence interval to the sample according to the $c$.
+%For low variance data, DROP evaluates a candidate basis with few samples from the dataset \red{as the confidence intervals shrink rapidly}. 
 
 The techniques in this section are presented in the context of $TLB$, but can be applied to any downstream task and metric for which we can compute confidence intervals and are monotonic in number of principal components retained.
 
@@ -231,22 +220,20 @@ For alternative preservation metrics, we can utilize closed-form confidence inte
 
 \subsection{Progress Estimation}
 \label{subsec:pest}
-Given a low dimensional $TLB$-achieving transformation from the evaluation step, DROP must identify the quality (dimensionality) and cost (runtime) of the transformation that would be obtained from an additional DROP iteration.
+%Given a low dimensional $TLB$-achieving transformation from the evaluation step, DROP must identify the dimensionality $k_i$ and runtime ($r_i$) of the transformation that would be obtained from an additional DROP iteration.
 %We refer to this as the $progress estimation$ step.
 
-Recall that DROP seeks to minimize objective function $R + \mathcal{C}_\mvar(k)$ such that $TLB(XT_k) \geq B$, with $R$ denoting DROP's total runtime, $T_k$ the $k$-dimensional $TLB$-preserving transformation of data $X$ returned by DROP, and $\mathcal{C}_\mvar(k)$ the workload cost function. 
+DROP seeks to minimize $R + \mathcal{C}_\mvar(k)$ such that $TLB(XT_k) \geq B$, with $R$ denoting DROP's total runtime, $T_k$ the $k$-dimensional $TLB$-preserving transformation of data $X$ returned by DROP, and $\mathcal{C}_\mvar(k)$ the workload cost function. 
 Therefore, given a $k_i$-dimensional transformation $T_{k_i}$ returned by the evaluation step of DROP's $i^{\text{th}}$ iteration, DROP can compute the value of this objective function by substituting its elapsed runtime for $R$ and $T_{k_i}$ for $T_k$.  
 We denote the value of the objective at the end of iteration $i$ as $obj_i$. 
-To decide whether to continue iterating to find an improved transformation, DROP must be able to estimate the objective function value of future iterations.
 
-In \S\ref{subsec:opt} we show that DROP requires $obj_{i+1}$ to minimize this objective function.
-To estimate $obj_{i+1}$, DROP must estimate the runtime required for iteration $i+1$ (which we denote as $r_{i+1}$, where $R=\sum_i r_i$ after $i$ iterations) and the dimensionality of the $TLB$-preserving transformation produced by iteration $i+1$, $k_{i+1}$. 
-Because DROP cannot directly measure $r_{i+1}$ or $k_{i+1}$ without performing iteration $i+1$, DROP performs online progress estimation to estimate these quantities. Specifically, DROP performs online parametric fitting to compute future values based on prior values for $r_{i}$ and $k_i$ in line~\ref{eq:estimate} of Algorithm~\ref{alg:DROP}. 
+To decide whether to continue iterating to find a lower dimensional transform, we show in  \S\ref{subsec:opt} that DROP must estimate $obj_{i+1}$. To do so, DROP must estimate the runtime required for iteration $i+1$ (which we denote as $r_{i+1}$, where $R=\sum_i r_i$ after $i$ iterations) and the dimensionality of the $TLB$-preserving transformation produced by iteration $i+1$, $k_{i+1}$. 
+DROP cannot directly measure $r_{i+1}$ or $k_{i+1}$ without performing iteration $i+1$, thus performs online progress estimation. Specifically, DROP performs online parametric fitting to compute future values based on prior values for $r_{i}$ and $k_i$ (Alg.~\ref{alg:DROP}, l\ref{eq:estimate}). 
 By default, given a sample of size $m_i$ in iteration $i$, DROP performs linear extrapolation to estimate $k_{i+1}$ and $r_{i+1}$. The estimate of $r_{i+1}$, for instance, is:
 
 \vspace{-.4cm}
 \begin{equation*}
-\hat{r}_{i+1} = r_i + \frac{r_i - r_{i-1}}{m_i - m_{i-1}} (m_{i+1} -  m_i)
+\hat{r}_{i+1} = r_i + \frac{r_i - r_{i-1}}{m_i - m_{i-1}} (m_{i+1} -  m_i).
 \end{equation*}
 
 \begin{comment}
@@ -259,13 +246,12 @@ While linear extrapolation acts as a proof-of-concept for progress estimation, t
 \subsection{Cost-Based Optimization}
 \label{subsec:opt}
 
-Given the results of the progress estimation step, DROP must determine if continued PCA on additional samples will be beneficial to overall runtime, or if it is better to terminate. 
+DROP must determine if continued PCA on additional samples will be beneficial to overall runtime. 
 %We refer to this as the $cost-based optimization$ step. 
-
-Given predictions of the next iteration's runtime ($\hat{r}_{i+1}$) and dimensionality ($\hat{k}_{i+1}$), DROP uses a greedy heuristic in estimating the optimal objective-minimizing stopping point.
-Concretely, if the objective function estimate for the next iteration is greater than its current objective function value ($obj_i < \widehat{obj}_{i+1}$), then DROP will terminate. 
-If DROP's runtime is convex in the number of iterations, it is straightforward to prove that this condition is in fact the optimal stopping criterion (i.e., via convexity of composition of convex functions). 
-This stopping criterion leads to a simple check at each DROP iteration that is used by  \textsc{optimize} in Algorithm~\ref{alg:DROP} line~\ref{eq:optimize}: 
+Given predictions of the next iteration's runtime ($\hat{r}_{i+1}$) and dimensionality ($\hat{k}_{i+1}$), DROP uses a greedy heuristic to estimate the optimal stopping point.
+Concretely, if the estimated objective function value is greater than its current value ($obj_i < \widehat{obj}_{i+1}$), then DROP will terminate. 
+If DROP's runtime is convex in the number of iterations, it is straightforward to prove that this condition is the optimal stopping criterion (i.e., via convexity of composition of convex functions). 
+This stopping criterion leads to the following check at each iteration (Alg.\ref{alg:DROP}, l\ref{eq:optimize}): 
 
 \vspace{-.4cm}
 \begin{align}
@@ -289,11 +275,10 @@ We show the implications of this decision in DROP in \S\ref{subsec:arch}.%, and 
 \subsection{Choice of PCA Subroutine}
 \label{subsec:pcaroutine}
 
-
 The most straightforward means of implementing PCA via SVD in DROP is computationally inefficient compared to DR alternatives (\S\ref{sec:background}).  
-In DROP, we compute PCA via a randomized SVD algorithm from~\cite{tropp} (SVD-Halko). 
-While additional advanced methods for efficient PCA exist (\S\ref{sec:relwork}), we found that not only is SVD-Halko asymptotically of the same running time as techniques used in practice, it is straightforward to implement, can take advantage of optimized linear algebra libraries, and does not require tuning for hyperparameters such as batch size, learning rate, or convergence criteria.  
-While SVD-Halko is not as efficient as other techniques with respect to communication complexity as in~\cite{ppca-sigmod}, or convergence rate as in~\cite{re-new}, these techniques can be easily substituted for SVD-Halko in DROP's architecture.
+In DROP, we compute PCA via a randomized SVD algorithm from~\cite{tropp} (SVD-Halko).
+Additional methods for efficient PCA exist (i.e., PPCA, which we provide), but we found that not only is SVD-Halko asymptotically of the same running time as techniques used in practice, it is straightforward to implement, can utilize optimized linear algebra libraries, and does not require hyperparameter tuning for batch size, learning rate, or convergence criteria.  
+%While SVD-Halko is not as efficient as other techniques with respect to communication complexity as in~\cite{ppca-sigmod}, or convergence rate as in~\cite{re-new}, these techniques can be easily substituted for SVD-Halko in DROP's architecture.
 %%%%We demonstrate this by implementing multiple alternatives in \S\ref{subsec:pcaexp}.
 %%%%\red{Further, we also demonstrate that this implementation is competitive with the widely used SciPy Python library~\cite{scipy}}.
 
@@ -324,15 +309,15 @@ $T$: new sample's transformation \\
 \subsection{Work Reuse}
 \label{subsec:reuse}
 
-A natural question arises due to DROP's iterative architecture: can we combine the information from each sample's transformation without computing PCA over the union of the sampled data points? 
-Stochastic methods for PCA enable such work reuse across samples as they iteratively refine a single transformation matrix, but other methods do not.
+A natural question arises due to DROP's iterative architecture: can we combine information across each sample's transformations without computing PCA over the union of the data samples? 
+Stochastic PCA methods enable work reuse across samples as they iteratively refine a single transformation matrix, but other methods do not.
 %We propose an algorithm that allows reuse of previous work when utilizing arbitrary PCA routines with DROP.
-DROP uses two key insights in order to enable work reuse when utilizing arbitrary PCA routines.
+DROP uses two insights to enable work reuse over any PCA routine.
 
-First, given two PCA transformation matrices, $T_1$ and $T_2$, their horizontal concatenation $H = [T_1 | T_2]$ is a transformation into the union of their range spaces.
-Second, the principal components returned from running PCA on repeated data samples will generally concentrate to the true top principal components for datasets with rapid spectrum drop off.
-Work reuse proceeds via two-step concatenate-distill approach:
-DROP maintains a transformation history consisting of the horizontal concatenation of all PCA transformations to this point, and then computes the SVD of this matrix and returns the first $k$ columns as the transformation matrix. 
+First, given PCA transformation matrices $T_1$ and $T_2$, their horizontal concatenation $H = [T_1 | T_2]$ is a transformation into the union of their range spaces.
+Second, principal components returned from running PCA on repeated data samples generally concentrate to the true top principal components for datasets with rapid spectrum drop off.
+Work reuse thus proceeds as follows:
+DROP maintains a transformation history consisting of the horizontal concatenation of all transformations to this point, computes the SVD of this matrix, and returns the first $k$ columns as the transformation matrix. 
 
 Although this routine requires an SVD computation, computational overhead is dependent size of the history matrix, not the dataset size.
 This size is proportional to the original dimensionality $\dvar$ and size of lower dimensional transformations, which are in turn proportional to the data's intrinsic dimensionality and the $TLB$ constraint.
