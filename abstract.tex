@@ -1,9 +1,12 @@
 \section*{abstract}
-Dimensionality reduction (DR) is a critical step in machine learning pipelines. 
-Principal Component Analysis (PCA) is often the DR method of choice, yet is often prohibitively slow.
-Theoretical means of accelerating PCA via sampling have been proposed, but typically treat PCA as a reusable statistical operator independent of downstream analytics workflows.
-We show how accounting for downstream analytics operations during DR via PCA allows stochastic methods to efficiently operate over small (e.g., 1\%) subsamples of input data, reducing end-to-end machine learning pipeline runtime. 
+Dimensionality reduction is a critical step in scaling machine learning pipelines. Principal component analysis (PCA) is a standard tool for dimensionality reduction, but performing PCA over a full dataset can be prohibitively expensive. 
+As a result, theoretical work has studied the effectiveness of iterative, stochastic PCA methods that operate over data samples. 
+However, termination conditions for stochastic PCA either execute for a predetermined number of iterations, or until convergence of the solution, frequently sampling too many or too few datapoints for end-to-end runtime improvements. We show how accounting for downstream analytics operations during DR via PCA allows stochastic methods to efficiently terminate after operating over small (e.g., 1\%) subsamples of input data, reducing whole workload runtime. 
 Leveraging this, we propose a DR optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
+
+
+
+
 %This enables end-to-end optimization over both dimensionality reduction and analytics tasks.
 %By combining techniques spanning progressive sampling, approximate query processing, and cost-based optimization, we propose a dimensionality reduction optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and achieves parity with or exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
 

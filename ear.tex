@@ -15,10 +15,10 @@ We evaluate DROP's efficiency along three dimensions: runtime, accuracy, and ext
 
 \subsection{Experimental Setup}
 \label{subsec:setup}
-\minihead{Implementation} We implement DROP as an in-memory, batch-oriented feature transformation dataflow operator in Java using \red{the multi-threaded Matrix-Toolkits-Java (MTJ) library~\cite{mtj} and netlib-java~\cite{netlib} linked against Intel MKL~\cite{mkl} for compute-intensive linear algebra operations. 
+\minihead{Implementation} We implement DROP in Java using \red{the multi-threaded Matrix-Toolkits-Java (MTJ) library~\cite{mtj}, and netlib-java~\cite{netlib} linked against Intel MKL~\cite{mkl} for compute-intensive linear algebra operations. 
 We use multi-threaded JTransforms~\cite{jtransforms} for FFT, and implement multi-threaded PAA from scratch.}
 %To provide an apples-to-apples comparison with our single-core PAA implementation, we disable multithreading in MTJ---enabling multi-core will equally improve all PCA-based methods across the board, including DROP, relative to PAA.
-We use \red{the} Statistical Machine Intelligence and Learning Engine (SMILE) library~\cite{smile} for k-NN with different index structures\red{, and k-means}. 
+We use \red{the} Statistical Machine Intelligence and Learning Engine (SMILE) library~\cite{smile} for k-NN {and k-means}. 
 
 \begin{comment}
 \minihead{Environment} We use a server with \red{two Intel Xeon E5-2690v4 @ 2.60Ghz CPUs, each with 14 physical and 28 virtual cores (with hyper-threading). The server contains 512GB of RAM.}
@@ -31,14 +31,15 @@ We first consider the UCR Time Series Classification Archive~\cite{ucr} for inde
 We exclude datasets with fewer than 1 million entries, and fewer datapoints than dimensionality, leaving 14 datasets. 
 %We also consider a larger, labeled earthquake dataset from XXX~\cite{quake}.
 
-Due to the relatively small size of these time series datasets, we consider three additional datasets to showcase tangible wall-clock runtime improvements with DROP.
-We use the standard MNIST hand-written digits dataset~\cite{mnist}, the FMA featurized music dataset~\cite{fma}, and a labeled sentiment analysis IMBb dataset~\cite{imdb}, which also demonstrates extensibility beyond time series data. 
+Due to the relatively small size of these time series datasets, we consider three additional datasets to showcase runtime improvements with DROP.
+We use the MNIST hand-written digits dataset~\cite{mnist}, the FMA featurized music dataset~\cite{fma}, and a sentiment analysis IMBb dataset~\cite{imdb}, which also demonstrates extensibility beyond time series data. 
 
-\minihead{DROP Configuration} We use a runtime cost function for k-NN obtained via linear interpolation on data of varying dimension (implemented via cover trees~\cite{ctree}, K-D trees~\cite{kdtree},or brute force search in SMILE).
-To evaluate the sensitivity to cost model, we also report on the effect of operating without a cost model (i.e., sample until convergence) in \S\ref{subsec:lesion}.
-We set $TLB$ constraints such that the accuracy of K-NN tasks remain unchanged before and after indexing via DR, corresponding to $B = 0.99$  for the UCR datasets.
-Unless otherwise specified, we use a default sampling schedule that begins with and increases by $1\%$ of the input.
-It is possible to optimize (and possibly overfit) this schedule for our target time series, but we provide a conservative, more general schedule.
+\minihead{DROP Configuration} We use a runtime model for k-NN and k-means that we computed via polynomial interpolation on data of varying dimension.
+While the runtime model is an optional input parameter, any general black-box function estimation routine can estimate this model given black-box access to the downstream workload.
+To evaluate sensitivity to runtime model, we also report on the effect of operating without it (i.e., sample until convergence).
+We set $TLB$ constraints such that k-NN accuracy remains unchanged, corresponding to $B = 0.99$  for the UCR datasets.
+We use a default sampling schedule that begins with and increases by $1\%$ of the input.
+It is possible to optimize (and perhaps overfit) this schedule in future work (\S\ref{subsec:disc}), but we provide a conservative, general schedule as a proof of concept.
 %%%%We further discuss sampling schedules and properties that make a dataset amenable to DROP in \S\ref{subsec:disc}. 
 
 \minihead{Baselines} We report runtime, accuracy, and reduced dimension compared to FFT, PAA, PCA via SVD-Halko, and PCA via SVD. 
@@ -46,13 +47,13 @@ Each computes a transformation over the entire data, then performs binary search
 %%%%We further discuss choice of PCA subroutine in \S\ref{subsec:pcaexp}. 
 
 \minihead{Similarity Search/k-NN Setup} 
-While many methods for similarity search exist, as in~\cite{keogh-study}, we consider k-NN in our evaluation as it is classically used and  interoperates with new use cases including one-shot learning and deep metric learning~\cite{knn1, knn2, knn3}.
+While many methods for similarity search exist, as in~\cite{keogh-study}, we primarily consider k-NN in our evaluation, but also briefly validate k-means performance.
 %\red{Further, adopting k-NN (and, k-means in \S\ref{subsec:nonts}), which is not a classically supported relational operator, as our target task demonstrates that simple runtime estimation routines can be extended to time-series-specific  operators.}
-To evaluate DR performance when used with downstream indexes, we vary k-NN's multidimensional index structure: cover trees, K-D trees, or no index. 
+To evaluate DR performance when used with downstream indexes, we vary k-NN's multidimensional index structure: cover trees~\cite{ctree}, K-D trees~\cite{kdtree}, or no index. 
 
 End-to-end performance depends on the number of queries in the workload, and DROP is optimized for the repeated-query use case. 
 Due to the small size of the UCR datasets, we choose a 1:50 ratio of data indexed to number of query points, and vary this index-query ratio in later microbenchmarks and experiments. 
-We also provide a cost model for assessing the break-even point that balances the cost of a given DR technique against it's indexing benefits to each query point.
+We also provide a cost model for assessing the break-even point that balances the cost of a given DR technique against its indexing benefits.
 
 
 \begin{figure*}[t!]
@@ -68,10 +69,10 @@ We also provide a cost model for assessing the break-even point that balances th
 
 We evaluate DROP's performance compared to PAA and FFT using the time series case study. 
 
-\minihead{k-NN Performance} We summarize DROP's results on an end-to-end 1-Nearest Neighbor classification in Figure~\ref{fig:knnAll}.
+\minihead{k-NN Performance} We summarize DROP's results on a 1-Nearest Neighbor classification in Figure~\ref{fig:knnAll}.
 We display the end-to-end runtime of DROP, PAA, and FFT for each of the considered index structures: no index, K-D trees, cover trees. 
 We display the size of the returned dimension for the no indexing scenario, as the other two scenarios return near \red{identical values.
-This occurs as many of the datasets used in this experiment are small and possess low intrinsic dimensionality; DROP's cost model thus determines to quickly identify this dimensionality prior to termination. 
+This occurs as many of the datasets used in this experiment are small and possess low intrinsic dimensionality that DROP quickly identifies
 }
 We do not display k-NN accuracy as all techniques meet the $TLB$ constraint, and achieve the same accuracy within $1\%$.
 
@@ -88,8 +89,8 @@ Determining if DROP is a good fit for a dataset is an exciting area for future w
 \minihead{Varying Index-Query Ratio}
 
 DROP is optimized for a low index-query ratio, as in many streaming and/or high-volume data use cases.
-If there are many more data points queried than used for constructing an index, DROP will outperform alternatives. 
-A natural question that arises is in which scenarios is it beneficial to use DROP. 
+%If there are many more data points queried than used for constructing an index, DROP will outperform alternatives. 
+A natural question that arises is: at what scale is it beneficial to use DROP?
 While domain experts are typically aware of the scale of their query workloads, we also provide a heuristic to answer this question given rough runtime and cardinality estimates of the downstream task and the alternative DR technique.
 
 Let $x_d$ and $x_a$ be the per-query runtime of running a downstream task with the output of DROP and a given alternative method, respectively. 
@@ -97,7 +98,7 @@ Let $r_d$ and $r_a$ denote the amortized per-datapoint runtime of DROP and the a
 Let $n_i$ and $n_q$ the number of indexed and queried points. 
 DROP is faster when $n_q x_d + n_i r_d < n_q x_a + n_i r_a$.
 
-To verify, we obtained estimates of the above and compared DROP against FFT and PAA in lower-query-volume scenarios when running k-NN using cover trees, and display the results in Figure~\ref{fig:query}.
+To verify, we obtained estimates of the above and empirically validate when running k-NN using cover trees (Figure~\ref{fig:query}).
 We first found that in the 1:1 index-query ratio setting, DROP should be slower than PAA and FFT, as observed. 
 However, as we decrease the ratio, DROP becomes faster, with a break-even point of slightly lower than 1:3. 
 We show that DROP does indeed outperform PAA \red{and FFT} in the 1:5 index-query ratio case, where it is is on average \red{$1.51\times$} faster than PAA and \red{$1.03\times$} faster than FFT. 
@@ -174,9 +175,9 @@ Each of these optimizations improves runtime, with the exception of work reuse, 
 \end{figure}
 \end{comment}
 
-Work reuse typically only slightly affects end-to-end runtime as it is useful primarily when a large number of DROP iterations are required.
+Work reuse here typically slightly affects end-to-end runtime as it is useful primarily when a large number of DROP iterations are required.
 We also observe this behavior on certain small datasets with moderate intrinsic dimensionality, such as the yoga dataset in Figure~\ref{fig:lesion}b. 
-Work reuse provides a $15\%$ improvement in addition to cost based optimization.
+Work reuse provides a $15\%$ improvement over cost based optimization.
 
 DROP's sampling operates on the premise that the dataset has data-point-level redundancy. 
 However, datasets without this structure are more difficult to reduce the dimensionality of.
@@ -221,7 +222,7 @@ This near-constant runtime contrasts with PCA via SVD and SVD-Halko as they do n
 \subsection{Beyond the Time Series Case Study}
 \label{subsec:nonts}
 
-We consider generalizability beyond our initial case study along two axes: data domain and downstream workload. These preliminary results show promise in extension to additional domains and target tasks.  
+We consider generalizability beyond our initial case study along two axes: data domain and downstream workload. %These preliminary results show promise in extension to additional domains and target tasks.  
 
 \subsubsection*{Data Domain}
 We examine classification/similarity search workloads across image classification, music analysis, and natural language processing. 

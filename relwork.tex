@@ -6,12 +6,9 @@
 database~\cite{keogh-indexing,local-dr,charu-ss}, data
 mining~\cite{sax,paa}, statistics and machine
 learning~\cite{alecton,shamir,bernstein,pca-stoc} communities.
-In this paper, our focus is on PCA.
-While classic PCA via SVD is inefficient, stochastic PCA methods provide a scalable alternative as they iterate over data samples~\cite{re-new, shamir}.
-However, they either $i)$ execute for a pre-specified number of iterations or $ii)$ execute until convergence.
-In case $i$, the number of iterations required for a given dataset is highly data-dependent and difficult to specify a priori.
-In case $ii$, running to convergence may not be required, and thus can incur unnecessary overhead.
-Thus, to our knowledge, existing termination conditions are not suitable when considering willingness to trade quality for whole workload runtime.
+In this paper, our focus is on DR via PCA.
+While classic PCA via SVD is inefficient, stochastic~\cite{re-new, shamir} and randomized~\cite{tropp} methods provide scalable alternatives.
+DROP draws from both the former to tackle the challenge of how much data to sample, and the latter for its default PCA operator (though DROP's modular architecture makes it simple to use any method in its place). Further, to the best of our knowledge, these advanced methods for PCA have not been empirically compared head-to-head with conventional DR approaches such as Piecewise Approximate Averaging~\cite{paa}.
 
 %To the best of our knowledge, advanced methods for PCA
 %have not been empirically compared head-to-head with conventional
@@ -22,7 +19,6 @@ Thus, to our knowledge, existing termination conditions are not suitable when co
 %Foremost among these techniques are advanced stochastic methods~\cite{re-new,shamir}, and techniques for randomized SVD~\cite{tropp}.
 %While we default to the latter for use by DROP's PCA operator, DROP's modular architecture makes it simple to use any method in its place, including recent systems advances in scalable PCA~\cite{ppca-sigmod}.
 %As a proof of concept of our method, we provide implementations of full SVD-based PCA, power iteration, as well as Oja's method. 
-
 
 %, especially on real datasets. 
 %In addition, DROP
