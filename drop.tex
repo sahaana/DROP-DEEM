@@ -4,12 +4,12 @@
 
 \usepackage{booktabs} % For formal tables
 %\usepackage[subtle]{savetrees}
-\settopmatter{printacmref=false}
+%\settopmatter{printacmref=true}
 % Copyright
 %\setcopyright{none}
 %\setcopyright{acmcopyright}
 %\setcopyright{acmlicensed}
-\setcopyright{rightsretained}
+%\setcopyright{rightsretained}
 %\setcopyright{usgov}
 %\setcopyright{usgovmixed}
 %\setcopyright{cagov}
@@ -73,11 +73,16 @@
 %Conference
 \acmConference[DEEM'19]{DEEM}{June 2019}{Amsterdam, The Netherlands}
 \acmYear{2019}
+\acmPrice{15.00}
+\acmDOI{10.1145/1122445.1122456}
+\acmISBN{978-1-4503-9999-9/18/06}
 
+
+%Conference
 
 
 \begin{document}
-\title{DROP: Optimizing Stochastic Dimensionality \\ Reduction \red{via Workload-Aware Progressive Sampling}}
+\title{DROP: A Workload-Aware Optimizer for Dimensionality Reduction}
 
 
 \author{Sahaana Suri, Peter Bailis}
@@ -85,10 +90,36 @@
   \institution{Stanford University}
 }
 
+\renewcommand{\shortauthors}{S. Suri and P. Bailis}
+
+
+
+\begin{abstract}
+Dimensionality reduction (DR) is a critical step in scaling machine learning pipelines. Principal component analysis (PCA) is a standard DR tool, but classic methods for computing PCA over a full dataset can be computationally expensive: $O(dn^2 + n^3)$ for an $n$-dimensional dataset of $d$ points. 
+As a result, theoretical work has studied the effectiveness of iterative, stochastic PCA methods that operate over data samples. 
+However, termination conditions for stochastic PCA either execute for a predetermined number of iterations, or until convergence of the solution, frequently sampling too many or too few datapoints for end-to-end runtime improvements. We show how accounting for downstream analytics operations during DR via PCA allows stochastic methods to efficiently terminate after operating over small (e.g., 1\%) subsamples of input data, reducing whole workload runtime. 
+Leveraging this, we propose DROP, a DR optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
+\end{abstract}
+
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010147.10010257.10010258.10010262.10010277</concept_id>
+<concept_desc>Computing methodologies~Transfer learning</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10002951.10003227.10003351</concept_id>
+<concept_desc>Information systems~Data mining</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
 
 \maketitle
 
-\input{abstract}
+%\input{abstract}
 \input{intro}
 \input{relwork}
 \input{background}
@@ -98,9 +129,7 @@
 \input{extensions}
 %\input{conclusion}
 
-
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{drop}
-
 %\input{appendices}
 \end{document}

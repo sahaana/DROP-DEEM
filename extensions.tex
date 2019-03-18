@@ -36,7 +36,7 @@ For instance, recent theoretical results that use sampling to estimate spectrum,
 
 Given a stationary input distribution, users can extract fixed-length sliding windows from the source and apply DROP's transformation over these segments as they arrive. 
 Should the data distribution not be stationary over time, DROP can be be periodically retrained in one of two ways. 
-First, DROP can use of the wide body of work in changepoint or feature drift detection~\cite{cp1, cp2} to determine when to retrain. 
+First, DROP can make use of the wide body of work in changepoint or feature drift detection~\cite{cp1, cp2} to determine when to retrain. 
 Alternatively, DROP can maintain a reservoir sample of incoming data~\cite{reservoir}, tuned to the specific application, and retrain if the metric of interest no longer satisfies user-specified constraints. 
 Due to DROP's default termination condition, cost-based optimization must be disabled until the metric constraint is achieved to prevent early termination.
 
