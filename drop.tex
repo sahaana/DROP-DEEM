@@ -95,10 +95,11 @@
 
 
 \begin{abstract}
-Dimensionality reduction (DR) is a critical step in scaling machine learning pipelines. Principal component analysis (PCA) is a standard DR tool, but classic methods for computing PCA over a full dataset can be computationally expensive: $O(dn^2 + n^3)$ for an $n$-dimensional dataset of $d$ points. 
-As a result, theoretical work has studied the effectiveness of iterative, stochastic PCA methods that operate over data samples. 
-However, termination conditions for stochastic PCA either execute for a predetermined number of iterations, or until convergence of the solution, frequently sampling too many or too few datapoints for end-to-end runtime improvements. We show how accounting for downstream analytics operations during DR via PCA allows stochastic methods to efficiently terminate after operating over small (e.g., 1\%) subsamples of input data, reducing whole workload runtime. 
-Leveraging this, we propose DROP, a DR optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition-based} PCA techniques, and exceeds conventional approaches like FFT and PAA by up to \red{$16\times$} in end-to-end workloads.
+Dimensionality reduction (DR) is a critical step in scaling machine learning pipelines: by reducing input dimensionality in exchange for a preprocessing overhead, DR enables faster end-to-end runtime. Principal component analysis (PCA) is a standard DR tool, but can be computationally expensive: classically $O(dn^2 + n^3)$ for an $n$-dimensional dataset of $d$ points. 
+Theoretical work has optimized PCA via iterative, stochastic methods that operate over data samples. 
+However, these methods execute for a fixed number of iterations or until convergence, sampling too many or too few datapoints for end-to-end runtime improvements. 
+We first show how accounting for downstream analytics operations during DR via PCA allows stochastic methods to efficiently terminate after processing small (e.g., 1\%) samples of data. 
+Leveraging this, we propose DROP, a DR optimizer that enables speedups of up to \red{$5\times$} over \red{Singular-Value-Decomposition (SVD)-based} PCA techniques, and exceeds conventional DR methods by up to \red{$16\times$} in end-to-end workloads.
 \end{abstract}
 
 

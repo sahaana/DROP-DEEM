@@ -66,7 +66,7 @@ We also provide a cost model for assessing the break-even point that balances th
 \label{subsec:runtime}
 
 
-We evaluate DROP's performance compared to PAA and FFT using the time series case study extended from~\cite{keogh-study}. 
+We first evaluate DROP's performance compared to PAA and FFT using the time series case study extended from~\cite{keogh-study}. 
 
 \minihead{k-NN Performance} We summarize DROP's results on a 1-Nearest Neighbor classification in Figure~\ref{fig:knnAll}.
 We display the end-to-end runtime of DROP, PAA, and FFT for each of the considered index structures: no index, K-D trees, cover trees. 
@@ -210,7 +210,7 @@ This near-constant runtime contrasts with PCA via SVD and SVD-Halko as they do n
 
 \begin{figure}
 \includegraphics[width=\linewidth]{figs/nonts-revision.pdf}
-\caption[]{End-to-End k-NN runtime (top) and returned dimension $k$ (bottom) over the entire MNIST dataset and the FMA featurized music dataset.}
+\caption[]{End-to-End k-NN runtime (top) and returned dimension $k$ (bottom) over four non-time-series datasets spanning text, image, and music }
 \label{fig:beyond}
 \end{figure}
 
@@ -226,7 +226,7 @@ We examine classification/similarity search workloads across image classificatio
 We repeat the k-NN retrieval experiments with a 1:1 index-query ratio.
 We use the MNIST hand-written digit image dataset of 70,000 images of dimension 784 (obtained by flattening each $28 \times 28$-dimensional image into a single vector~\cite{mnist}, combining both the training and testing datasets); FMA's featurized music dataset, providing 518 features across 106,574 music tracks; a bag-of-words representation of an IMDb sentiment analysis dataset across 25,000 movies with 5000 features~\cite{imdb}; \red{Fashion MNIST's 70,000 images of dimension 784~\cite{fashion}}.  
 We present our results in Figure~\ref{fig:beyond}.
-As these datasets are larger than those in~\cite{ucr}, DROP's ability to find a $TLB$-preserving low dimensional basis is more valuable as this more directly translates to significant reduction in end-to-end runtime---up to \red{a 7.6 minute wall-clock improvement in MNIST, 42 second improvement in Fashion MNIST, 1.2 minute improvement in music features, and 8 minute improvement in IMDB compared to PAA. 
+As these datasets are larger than those in~\cite{ucr}, DROP's ability to find a $TLB$-preserving low dimensional basis is more valuable as this more directly translates to significant reduction in end-to-end runtime---up to \red{a 7.6 minute wall-clock improvement in MNIST, 42 second improvement in Fashion MNIST, 1.2 minute improvement in music features, and 8 minute improvement in IMDb compared to PAA. 
 These runtime effects will only be amplified as the index-query ratio decreases, to be more typical of the repeated-query setting. 
 For instance, when we decrease the ratio to 1:5 on the music features dataset, DROP provides a 6.1 and 4.5 minute improvement compared to PAA and FFT, respectively. 
 }

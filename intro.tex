@@ -3,17 +3,22 @@
 \label{sec:intro}
 
 %high D data is growing %this is scalability challenge 
-As rapid growth in high-dimensional data from automated data sources~\cite{plato,macrobase-cidr} poses a scalability challenge for machine learning pipelines, practitioners turn to dimensionality reduction techniques~\cite{keogh-indexing,local-dr,decade,gemini}.
+Rapid growth in high-dimensional data from automated data sources poses a scalability challenge for machine learning pipelines~\cite{plato,macrobase-cidr}.
+Thus, practitioners turn to dimensionality reduction (DR) techniques to alleviate this challenge~\cite{keogh-indexing,local-dr,decade,gemini}.
 %DR can help <explain>
 %Dimensionality reduction (DR) techniques can alleviate this scalability challenge~\cite{keogh-indexing,local-dr,decade,gemini}.
-In exchange for a runtime overhead, DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features.
-This allows downstream analytics routines to run in time proportional to $k$, while preserving downstream task accuracy.
+DR methods transform an $n$-dimensional dataset to a lower $k$-dimensional representation while preserving salient dataset features.
+This allows downstream analytics routines to run in time that scales with $k$, while preserving downstream task accuracy.
+Thus, in exchange for a preprocessing overhead, DR techniques enable us to decrease end-to-end workload runtime.
 
+%As downstream takss run in time that scales with k, we want k as low as possible while preserving downstream accuracy
+
+% To attain as low a transformation dim as possible, PCA is blah blah blah
 %PCA is what people want, but it is slow
 To attain a target downstream task accuracy with as low a transformation dimension $k$ as possible, Principal Component Analysis (PCA) is often practioners' DR method of choice ~\cite{jolbook}. 
-However, na\"{i}ve, task-independent PCA implementations scale poorly, resulting in runtimes that outweigh the downstream runtime benefit of DR. 
-In response, practitioners may utilize faster alternative techniques that return higher $k$ for a given accuracy, but provide a lower overall end-to-end runtime. 
-For instance, PCA is traditionally considered too computationally expensive for time series similarity search~\cite{time-series-dm}, with some papers excluding it in favor of more efficient but less precise methods~\cite{keogh-study}. 
+However, classic task-independent PCA implementations (i.e., via Singular Value Decomposition or SVD) scale poorly, with overheads that outweigh DR's downstream runtime benefit. 
+In response, practitioners may use faster DR techniques that return higher $k$ for a given accuracy, but provide a lower end-to-end runtime. 
+For instance, PCA is traditionally considered too computationally expensive for time series similarity search~\cite{time-series-dm}, with widely-cited work excluding it for more efficient,  less precise methods~\cite{keogh-study}. 
 
 %Recently, the ML literature has proposed a range of stochastic methods for optimizing PCA. The high level idea is we can do PCA on samples, essentially running SGD. You can run until convergence, but this can be a waste of effort, because downstream tasks often don't need an optimal basis. For example, if I want to find nearest neighbors, can deal with approximations. So, given a dataset and downstream query, it's not clear how many iterations to run, which leads to an uncomfortable trade-off between getting the right answer unnecessarily slow and getting the wrong answer quickly.
 

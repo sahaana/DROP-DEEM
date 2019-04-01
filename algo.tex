@@ -158,7 +158,7 @@ Ideally, the smallest $k_i$ would be known a priori, but in practice, this is no
 %Instead, DROP exploits two key properties of PCA to avoid this.
 
 First, PCA via SVD produces an orthogonal linear transformation where the principal components  are returned in order of decreasing dataset variance explained.
-Once DROP has computed the transformation matrix for dimension $\dvar$, DROP obtains the transformations for all dimensions $k$ less than $\dvar$ truncating the matrix to $\dvar \times k$ .
+As a result, once DROP has computed the transformation matrix for dimension $\dvar$, DROP obtains the transformations for all dimensions $k$ less than $\dvar$ by truncating the matrix to $\dvar \times k$ .
 %PCA via SVD produces an orthogonal linear transformation where the first principal component explains the most variance in the dataset, the second explains the second most---subject to being orthogonal to the first---and so on.  
 
 Second, with respect to $TLB$ preservation, the more principal components that are retained, the better the lower-dimensional representation in terms of $TLB$.  
@@ -167,12 +167,12 @@ Therefore, an $\dvar$-dimensional PCA perfectly preserves $\ell_2$-distance betw
 As $\ell_2$-distance is a sum of squared (positive) terms, the more principal components retained, the better the representation preserves $\ell_2$-distance.
 
 Using the first property, DROP obtains all low-dimensional transformations for the sample from the $\dvar$-dimensional basis.  
-Using the second property, DROP runs binary search over these transformations to return the lowest-dimensional basis that attains $B$ (Algorithm~\ref{alg:candidate} line~\ref{eq:basis}).
+Using the second property, DROP runs binary search over these transformations to return the lowest-dimensional basis that attains $B$ (Alg.~\ref{alg:candidate}, l\ref{eq:basis}).
 If $B$ cannot be realized with this sample, DROP omits further optimization steps and continues the next iteration by drawing a larger sample.
 
 Additionally, computing the full $\dvar$-dimensional basis at every iteration may be wasteful. 
 Thus, if DROP has found a candidate $TLB$-preserving basis of size $\dvar' < \dvar$ in prior iterations, then DROP only computes $\dvar'$ components at the start of the next iteration.
-This allows for more efficient PCA computation for future iterations, as advanced PCA routines can exploit the $\dvar'$-th eigengap to converge faster. (\S\ref{sec:relatedwork}).
+This allows for more efficient PCA computation for future iterations, as advanced PCA routines can exploit the $\dvar'$-th eigengap to converge faster (\S\ref{sec:relatedwork}).
 % \red{This is because similar to a hold-out or validation set, $TLB$ evaluation is representative of the entire dataset, not just the current sample (see Alg.~\ref{alg:candidate} L5). 
 %Thus, sampling additional training datapoints enables DROP to better learn global data structure and perform at least as well as over a smaller sample.}
 
@@ -186,7 +186,7 @@ Computing pairwise $TLB$ for all data points requires $O(\mvar^2\dvar)$ time, wh
 However, as the $TLB$ is an average of random variables bounded from 0 to 1, DROP can use sampling and confidence intervals to compute the $TLB$ to arbitrary confidences.
 
 Given a transformation, DROP iteratively refines an estimate of its $TLB$ (Alg.~\ref{alg:candidate}, l\ref{eq:eval}) by \red{incrementally sampling an increasing number of} pairs from the input data (Alg.~\ref{alg:candidate}, l\ref{eq:paircheck}), transforming each pair into the new basis, then measuring the distortion of $\ell_2$-distance between the pairs, providing a $TLB$ estimate to confidence level $c$ (Alg.~\ref{alg:candidate}, l\ref{eq:tlbeval}). 
-If the confidence interval's lower bound is greater than the target $TLB$, the basis is a sufficiently good fit; if its the upper bound is less than the target $TLB$, the basis is not a sufficiently good fit. 
+If the confidence interval's lower bound is greater than the target $TLB$, the basis is a sufficiently good fit; if its upper bound is less than the target $TLB$, the basis is not a sufficiently good fit. 
 If the confidence interval contains the target $TLB$,  \red{ DROP cannot determine if the target $TLB$ is achieved. 
 Thus, DROP automatically samples additional pairs to refine its estimate.
 %in practice, and especially for our initial target time series datasets, DROP rarely uses more than 500 pairs on average in its $TLB$ estimates (often using far fewer)
@@ -317,7 +317,7 @@ We show the implications of this decision in DROP in \S\ref{subsec:arch}.%, and 
 
 The most straightforward means of implementing PCA via SVD in DROP is computationally inefficient compared to DR alternatives (\S\ref{sec:background}).  
 DROP computes PCA via a randomized SVD algorithm from~\cite{tropp} (SVD-Halko).
-Alternative efficient methods for PCA exist (i.e., PPCA, which we also provide), but we found that SVD-Halko is asymptotically of the same running time as techniques used in practice, $2.5-28\times$ faster than our baseline implementations of SVD-based PCA, PPCA, and Oja's method, is straightforward to implement, and does not require hyperparameter tuning for batch size, learning rate, or convergence criteria.  
+Alternative efficient methods for PCA exist (i.e., PPCA, which we also provide), but we found that SVD-Halko is asymptotically of the same running time as techniques used in practice, is straightforward to implement, is $2.5-28\times$ faster than our baseline implementations of SVD-based PCA, PPCA, and Oja's method, and does not require hyperparameter tuning for batch size, learning rate, or convergence criteria.  
 %While SVD-Halko is not as efficient as other techniques with respect to communication complexity as in~\cite{ppca-sigmod}, or convergence rate as in~\cite{re-new}, these techniques can be easily substituted for SVD-Halko in DROP's architecture.
 %%%%We demonstrate this by implementing multiple alternatives in \S\ref{subsec:pcaexp}.
 %%%%\red{Further, we also demonstrate that this implementation is competitive with the widely used SciPy Python library~\cite{scipy}}.
@@ -359,7 +359,7 @@ Second, principal components returned from running PCA on repeated data samples 
 Work reuse thus proceeds as follows:
 DROP maintains a transformation history consisting of the horizontal concatenation of all transformations to this point, computes the SVD of this matrix, and returns the first $k$ columns as the transformation matrix. 
 
-Although this routine requires an SVD computation, computational overhead is dependent size of the history matrix, not the dataset size.
+Although this requires an SVD computation, computational overhead is dependent on the size of the history matrix, not the dataset size.
 This size is proportional to the original dimensionality $\dvar$ and size of lower dimensional transformations, which are in turn proportional to the data's intrinsic dimensionality and the $TLB$ constraint.
 As preserving \emph{all history} can be expensive in practice, 
 DROP periodically shrinks the history matrix using DR via PCA. 
